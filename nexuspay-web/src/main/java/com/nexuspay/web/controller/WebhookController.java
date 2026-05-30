@@ -1,0 +1,53 @@
+package com.nexuspay.web.controller;
+
+import com.nexuspay.service.WebhookService;
+import jakarta.validation.constraints.NotBlank;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/webhooks")
+@RequiredArgsConstructor
+public class WebhookController {
+    
+    private final WebhookService webhookService;
+    
+    @PostMapping
+    public ResponseEntity<?> create(
+            @RequestAttribute("merchantId") UUID merchantId,
+            @RequestBody CreateWebhookRequest req) {
+        return ResponseEntity.ok(webhookService.create(merchantId,
+                new WebhookService.CreateWebhookRequest(req.url(), req.events())));
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<?> update(
+            @PathVariable UUID id,
+            @RequestBody UpdateWebhookRequest req) {
+        return ResponseEntity.ok(webhookService.update(id,
+                new WebhookService.UpdateWebhookRequest(req.url(), req.events(), req.status())));
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<?> get(@PathVariable UUID id) {
+        return ResponseEntity.ok(webhookService.getEndpoint(id));
+    }
+    
+    @GetMapping
+    public ResponseEntity<?> list(@RequestAttribute("merchantId") UUID merchantId) {
+        return ResponseEntity.ok(webhookService.listEndpoints(merchantId));
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable UUID id) {
+        webhookService.delete(id);
+        return ResponseEntity.ok().build();
+    }
+    
+    public record CreateWebhookRequest(@NotBlank String url, String events) {}
+    public record UpdateWebhookRequest(String url, String events, 
+                                       com.nexuspay.domain.entity.WebhookEndpoint.EndpointStatus status) {}
+}

@@ -1,0 +1,11 @@
+.idea/
+*.iml
+*.iws
+*.ipr
+target/
+*.log
+.env
+.DS_Store
+.mvn/wrapper/maven-wrapper.jar
+/frontend/node_modules/
+/frontend/dist/
