@@ -8,6 +8,7 @@
 - [x] PostgreSQL with Flyway migrations
 - [x] JWT + API Key authentication
 - [x] Multi-provider support (Stripe, Square, Braintree)
+- [x] **Real provider SDK integration** (Stripe 24.0.0, Square 40.1.0, Braintree 3.31.0)
 - [x] Intelligent routing with weighted selection
 - [x] Payment lifecycle (create, confirm, capture, cancel)
 - [x] Refund processing
@@ -15,10 +16,16 @@
 - [x] Retry mechanism with exponential backoff
 - [x] Health monitoring with auto-demotion
 - [x] Webhook delivery with HMAC signing
+- [x] **Webhook ingestion** (Stripe, Square, Braintree)
 - [x] MFA (TOTP) support
 - [x] Role-based access control
 - [x] Payment links
-- [x] Reconciliation service
+- [x] **Dispute handling** with evidence submission
+- [x] **Payout reconciliation** with hourly aggregation
+- [x] **Embedded checkout** (/pub/tokenize)
+- [x] **Rate limiting** (token bucket)
+- [x] **Gateway audit logs**
+- [x] **Outbox pattern** for transactional webhooks
 
 ### Frontend
 - [x] Vue 3 + Vite + Tailwind CSS
@@ -31,12 +38,23 @@
 - [x] Webhooks configuration
 - [x] Team management
 - [x] Payment link public page
+- [x] **Disputes page**
+- [x] **Payouts page**
+- [x] **API Logs page**
 
 ### Infrastructure
 - [x] Docker + docker-compose
 - [x] GitHub Actions CI
 - [x] Swagger/OpenAPI documentation
 - [x] ~60% test coverage
+
+### Security
+- [x] Rate limiting on /auth, /pub, /api/v1/payment-intents
+- [x] Gateway request logging with trace IDs
+- [x] Outbox pattern for reliable webhook delivery
+- [ ] AES-256-GCM credential encryption (pending)
+- [ ] Password reset flow (pending)
+- [ ] MFA backup codes (pending)
 
 ---
 
@@ -79,9 +97,9 @@
 - [ ] Webhook delivery queue
 
 ### Security
-- [ ] Rate limiting per API key
+- [x] Rate limiting per IP/API key
+- [ ] AES-256-GCM credential encryption
 - [ ] IP allowlisting
-- [ ] Audit logging
 - [ ] Encryption at rest
 
 ---
@@ -112,7 +130,7 @@
 
 ### Advanced Routing
 - [ ] ML-based routing optimization
-- [ ] Cost-based routing
+- [ ] Cost-based routing (fee-aware)
 - [ ] Success rate prediction
 - [ ] A/B testing for routing
 
@@ -127,29 +145,6 @@
 - [ ] GDPR data export/deletion
 - [ ] SOC 2 preparation
 - [ ] Data retention policies
-
----
-
-## Version 2.1.0 - Platform Expansion
-
-### SDK & Plugins
-- [ ] Java SDK
-- [ ] Python SDK
-- [ ] Node.js SDK
-- [ ] Shopify plugin
-- [ ] WooCommerce plugin
-- [ ] Magento plugin
-
-### API Gateway
-- [ ] GraphQL API
-- [ ] WebSocket for real-time updates
-- [ ] gRPC support
-- [ ] API versioning strategy
-
-### Mobile
-- [ ] React Native mobile app
-- [ ] Push notifications
-- [ ] Mobile SDK for iOS/Android
 
 ---
 
@@ -174,6 +169,28 @@
 
 ---
 
+## Feature Comparison with Original Node.js Version
+
+| Feature | Node.js | Java | Status |
+|---------|---------|------|--------|
+| Payment Intent lifecycle | ✅ | ✅ | Complete |
+| Multi-provider routing | ✅ | ✅ | Complete |
+| Real SDK integration | ✅ | ✅ | Complete |
+| 3DS authentication | ✅ | ✅ | Complete |
+| Webhook ingestion | ✅ | ✅ | Complete |
+| Webhook delivery | ✅ | ✅ | Complete |
+| Dispute handling | ✅ | ✅ | Complete |
+| Payout reconciliation | ✅ | ✅ | Complete |
+| Rate limiting | ✅ | ✅ | Complete |
+| Audit logging | ✅ | ✅ | Complete |
+| Embedded checkout | ✅ | ✅ | Complete |
+| AES-256-GCM encryption | ✅ | ⚠️ | Pending |
+| Password reset | ✅ | ⚠️ | Pending |
+| MFA backup codes | ✅ | ⚠️ | Pending |
+| SMTP email | ✅ | ⚠️ | Pending |
+
+---
+
 ## Timeline
 
 | Version | Target Date | Status |
@@ -183,7 +200,6 @@
 | 1.2.0 | Q4 2024 | 📋 Planned |
 | 1.3.0 | Q1 2025 | 📋 Planned |
 | 2.0.0 | Q2 2025 | 📋 Planned |
-| 2.1.0 | Q3 2025 | 📋 Planned |
 | 3.0.0 | Q4 2025 | 📋 Planned |
 
 ---
