@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexusPay Card Element</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: transparent; }
+    
+    .card-form { display: flex; flex-direction: column; gap: 12px; padding: 4px; }
+    
+    .field-group { display: flex; gap: 12px; }
+    .field-group .field { flex: 1; }
+    
+    .field {
+      position: relative;
+    }
+    
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    
+    .field input {
+      width: 100%;
+      height: 40px;
+      padding: 0 12px;
+      font-size: 15px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    
+    .field input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+    
+    .field input.error {
+      border-color: #ef4444;
+    }
+    
+    .field input.valid {
+      border-color: #22c55e;
+    }
+    
+    .card-brand {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 32px;
+      height: 20px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+    
+    .error-message {
+      font-size: 12px;
+      color: #ef4444;
+      margin-top: 4px;
+      min-height: 16px;
+    }
+  </style>
+</head>
+<body>
+  <form class="card-form" id="cardForm">
+    <div class="field">
+      <label for="cardNumber">Card number</label>
+      <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" autocomplete="cc-number" maxlength="19">
+      <div class="card-brand" id="cardBrand"></div>
+      <div class="error-message" id="cardNumberError"></div>
+    </div>
+    
+    <div class="field-group">
+      <div class="field">
+        <label for="expiry">Expiry</label>
+        <input type="text" id="expiry" placeholder="MM / YY" autocomplete="cc-exp" maxlength="7">
+        <div class="error-message" id="expiryError"></div>
+      </div>
+      <div class="field">
+        <label for="cvc">CVC</label>
+        <input type="text" id="cvc" placeholder="123" autocomplete="cc-csc" maxlength="4">
+        <div class="error-message" id="cvcError"></div>
+      </div>
+    </div>
+  </form>
+
+  <script src="card.js"></script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexusPay Elements Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container { max-width: 480px; margin: 0 auto; }
+    h1 { font-size: 24px; margin-bottom: 8px; color: #1a1a1a; }
+    p.subtitle { color: #666; margin-bottom: 32px; }
+    
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 24px;
+    }
+    
+    .card-header { margin-bottom: 20px; }
+    .card-header h2 { font-size: 18px; color: #1a1a1a; }
+    .card-header p { font-size: 13px; color: #666; margin-top: 4px; }
+    
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    
+    #card-element {
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      min-height: 100px;
+    }
+    
+    input[type="email"], input[type="number"], select {
+      width: 100%;
+      height: 44px;
+      padding: 0 12px;
+      font-size: 15px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+    
+    .btn {
+      width: 100%;
+      height: 48px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-primary {
+      background: #6366f1;
+      color: white;
+    }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-primary:disabled { background: #a5b4fc; cursor: not-allowed; }
+    
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 20px;
+    }
+    .tab {
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #6b7280;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    .tab.active {
+      color: #6366f1;
+      border-bottom-color: #6366f1;
+    }
+    
+    .apm-buttons { display: flex; flex-direction: column; gap: 12px; }
+    
+    #result {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+    }
+    #result.success { display: block; background: #d1fae5; color: #065f46; }
+    #result.error { display: block; background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>NexusPay Elements Demo</h1>
+    <p class="subtitle">演示如何使用 NexusPay Elements SDK 接收支付</p>
+    
+    <div class="card">
+      <div class="card-header">
+        <h2>支付方式</h2>
+        <p>选择支付方式并完成支付</p>
+      </div>
+      
+      <div class="tabs">
+        <div class="tab active" data-tab="card">银行卡</div>
+        <div class="tab" data-tab="apm">其他方式</div>
+        <div class="tab" data-tab="setup">保存卡片</div>
+      </div>
+      
+      <!-- Card Element -->
+      <div id="card-tab" class="tab-content">
+        <div class="form-group">
+          <label>邮箱</label>
+          <input type="email" id="email" placeholder="receipt@example.com" value="test@example.com">
+        </div>
+        <div class="form-group">
+          <label>金额 (CNY)</label>
+          <input type="number" id="amount" value="100" min="1">
+        </div>
+        <div class="form-group">
+          <label>卡信息</label>
+          <div id="card-element"></div>
+        </div>
+        <button class="btn btn-primary" id="pay-btn">支付 ¥100</button>
+      </div>
+      
+      <!-- APM Tab -->
+      <div id="apm-tab" class="tab-content" style="display: none;">
+        <div class="apm-buttons">
+          <button class="btn" style="background: #000;" id="applepay-btn">Apple Pay</button>
+          <button class="btn" style="background: #4285f4; color: white;" id="googlepay-btn">Google Pay</button>
+          <button class="btn" style="background: #1677FF; color: white;" id="alipay-btn">支付宝</button>
+          <button class="btn" style="background: #07C160; color: white;" id="wechat-btn">微信支付</button>
+        </div>
+      </div>
+      
+      <!-- Setup Tab -->
+      <div id="setup-tab" class="tab-content" style="display: none;">
+        <div class="form-group">
+          <label>卡信息</label>
+          <div id="setup-element"></div>
+        </div>
+        <button class="btn btn-primary" id="setup-btn">保存卡片</button>
+      </div>
+      
+      <div id="result"></div>
+    </div>
+  </div>
+
+  <!-- Load NexusPay SDK -->
+  <script src="../nexuspay-js/dist/nexuspay.umd.js"></script>
+  <script>
+    // Initialize NexusPay
+    const nexuspay = Nexuspay('pk_test_demo', {
+      apiBase: 'http://localhost:8080',
+      locale: 'zh-CN'
+    });
+    
+    const elements = nexuspay.elements();
+    let cardElement = null;
+    let setupElement = null;
+    
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab + '-tab').style.display = 'block';
+      });
+    });
+    
+    // Mount Card Element
+    cardElement = elements.create('card');
+    cardElement.mount('#card-element');
+    
+    cardElement.on('change', (event) => {
+      document.getElementById('pay-btn').disabled = !event.complete;
+    });
+    
+    // Amount change
+    document.getElementById('amount').addEventListener('input', (e) => {
+      document.getElementById('pay-btn').textContent = `支付 ¥${e.target.value}`;
+    });
+    
+    // Pay button
+    document.getElementById('pay-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('pay-btn');
+      const result = document.getElementById('result');
+      
+      btn.disabled = true;
+      btn.textContent = '处理中...';
+      
+      try {
+        const { token, error } = await nexuspay.createToken(cardElement);
+        
+        if (error) {
+          result.className = 'error';
+          result.textContent = error.message;
+          return;
+        }
+        
+        // Send token to backend
+        const response = await fetch('http://localhost:8080/api/v1/payment-intents', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'sk_test_demo'
+          },
+          body: JSON.stringify({
+            amount: parseInt(document.getElementById('amount').value) * 100,
+            currency: 'cny',
+            receipt_email: document.getElementById('email').value,
+            payment_method_id: token
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'SUCCEEDED') {
+          result.className = 'success';
+          result.textContent = `支付成功！支付 ID: ${data.id}`;
+        } else {
+          result.className = 'error';
+          result.textContent = `支付状态: ${data.status}`;
+        }
+      } catch (e) {
+        result.className = 'error';
+        result.textContent = e.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = `支付 ¥${document.getElementById('amount').value}`;
+      }
+    });
+    
+    // Setup Element
+    setupElement = elements.create('setup');
+    setupElement.mount('#setup-element');
+    
+    document.getElementById('setup-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('setup-btn');
+      const result = document.getElementById('result');
+      
+      btn.disabled = true;
+      btn.textContent = '保存中...';
+      
+      try {
+        const { token, error } = await nexuspay.createToken(setupElement);
+        
+        if (error) {
+          result.className = 'error';
+          result.textContent = error.message;
+          return;
+        }
+        
+        result.className = 'success';
+        result.textContent = `卡片已保存！PaymentMethod: ${token}`;
+      } catch (e) {
+        result.className = 'error';
+        result.textContent = e.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '保存卡片';
+      }
+    });
+  </script>
+</body>
+</html>
