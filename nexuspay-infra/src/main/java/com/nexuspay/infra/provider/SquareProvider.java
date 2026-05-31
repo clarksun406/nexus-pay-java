@@ -1,9 +1,10 @@
-﻿package com.nexuspay.service.provider;
+package com.nexuspay.infra.provider;
 
 import com.nexuspay.common.util.AesGcmEncryptionService;
 import com.nexuspay.domain.entity.PaymentIntent;
 import com.nexuspay.domain.entity.ProviderAccount;
 import com.nexuspay.service.PaymentIntentService;
+import com.nexuspay.service.provider.PaymentProvider;
 import com.squareup.square.SquareClient;
 import com.squareup.square.api.PaymentsApi;
 import com.squareup.square.models.CreatePaymentRequest;
@@ -21,6 +22,11 @@ import java.util.UUID;
 public class SquareProvider implements PaymentProvider {
 
     private final AesGcmEncryptionService encryptionService;
+
+    @Override
+    public ProviderAccount.Provider supportedProvider() {
+        return ProviderAccount.Provider.SQUARE;
+    }
 
     @Override
     public PaymentIntentService.ChargeResult charge(PaymentIntent intent, String paymentMethodId, ProviderAccount account) {

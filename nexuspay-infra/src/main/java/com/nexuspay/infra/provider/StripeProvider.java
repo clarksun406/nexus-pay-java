@@ -1,9 +1,10 @@
-﻿package com.nexuspay.service.provider;
+package com.nexuspay.infra.provider;
 
 import com.nexuspay.common.util.AesGcmEncryptionService;
 import com.nexuspay.domain.entity.PaymentIntent;
 import com.nexuspay.domain.entity.ProviderAccount;
 import com.nexuspay.service.PaymentIntentService;
+import com.nexuspay.service.provider.PaymentProvider;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntentCreateParams;
@@ -19,6 +20,11 @@ import org.springframework.stereotype.Component;
 public class StripeProvider implements PaymentProvider {
 
     private final AesGcmEncryptionService encryptionService;
+
+    @Override
+    public ProviderAccount.Provider supportedProvider() {
+        return ProviderAccount.Provider.STRIPE;
+    }
 
     @Override
     public PaymentIntentService.ChargeResult charge(PaymentIntent intent, String paymentMethodId, ProviderAccount account) {

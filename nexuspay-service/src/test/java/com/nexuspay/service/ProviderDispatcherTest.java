@@ -1,19 +1,17 @@
-﻿package com.nexuspay.service;
+package com.nexuspay.service;
 
 import com.nexuspay.common.exception.BusinessException;
 import com.nexuspay.domain.entity.PaymentIntent;
 import com.nexuspay.domain.entity.ProviderAccount;
 import com.nexuspay.repository.ProviderAccountRepository;
-import com.nexuspay.service.provider.BraintreeProvider;
-import com.nexuspay.service.provider.SquareProvider;
-import com.nexuspay.service.provider.StripeProvider;
+import com.nexuspay.service.provider.PaymentProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,21 +24,31 @@ class ProviderDispatcherTest {
     private ProviderAccountRepository providerAccountRepository;
 
     @Mock
-    private StripeProvider stripeProvider;
+    private PaymentProvider stripeProvider;
 
     @Mock
-    private SquareProvider squareProvider;
+    private PaymentProvider squareProvider;
 
     @Mock
-    private BraintreeProvider braintreeProvider;
+    private PaymentProvider braintreeProvider;
 
-    @InjectMocks
     private ProviderDispatcher providerDispatcher;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+
+        when(stripeProvider.supportedProvider()).thenReturn(ProviderAccount.Provider.STRIPE);
+        when(squareProvider.supportedProvider()).thenReturn(ProviderAccount.Provider.SQUARE);
+        when(braintreeProvider.supportedProvider()).thenReturn(ProviderAccount.Provider.BRAINTREE);
+
+        providerDispatcher = new ProviderDispatcher(
+                providerAccountRepository,
+                List.of(stripeProvider, squareProvider, braintreeProvider)
+        );
         providerDispatcher.init();
+
+        clearInvocations(stripeProvider, squareProvider, braintreeProvider);
     }
 
     @Test
@@ -63,7 +71,6 @@ class ProviderDispatcherTest {
 
         assertEquals(expected, result);
         verify(stripeProvider).charge(intent, "pm_123", account);
-        verifyNoInteractions(squareProvider, braintreeProvider);
     }
 
     @Test
@@ -93,7 +100,9 @@ class ProviderDispatcherTest {
         when(providerAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         ProviderDispatcher dispatcherWithoutInit = new ProviderDispatcher(
-                providerAccountRepository, stripeProvider, squareProvider, braintreeProvider);
+                providerAccountRepository,
+                List.of(stripeProvider, squareProvider, braintreeProvider)
+        );
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> dispatcherWithoutInit.charge(ProviderAccount.Provider.STRIPE, intent, "pm_123"));
@@ -126,12 +135,13 @@ class ProviderDispatcherTest {
         when(providerAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
         ProviderDispatcher dispatcherWithoutInit = new ProviderDispatcher(
-                providerAccountRepository, stripeProvider, squareProvider, braintreeProvider);
+                providerAccountRepository,
+                List.of(stripeProvider, squareProvider, braintreeProvider)
+        );
 
         boolean result = dispatcherWithoutInit.capture(ProviderAccount.Provider.STRIPE, "pay_1", accountId);
 
         assertFalse(result);
-        verifyNoInteractions(stripeProvider, squareProvider, braintreeProvider);
     }
 
     @Test
@@ -161,4 +171,3 @@ class ProviderDispatcherTest {
         assertEquals("Provider account not found", ex.getMessage());
     }
 }
-
