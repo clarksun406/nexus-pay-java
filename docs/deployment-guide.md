@@ -1,44 +1,42 @@
-# NexusPay 部署指南
+﻿# NexusPay 閮ㄧ讲鎸囧崡
 
-## 环境要求
+## 鐜瑕佹眰
 
-| 组件 | 版本 |
+| 缁勪欢 | 鐗堟湰 |
 |------|------|
 | Java | 17+ |
 | PostgreSQL | 16+ |
-| Redis | 7+ (可选) |
+| Redis | 7+ (鍙€? |
 | Docker | 20+ |
 | Docker Compose | 2+ |
 
 ---
 
-## 一、Docker Compose 部署（推荐）
+## 涓€銆丏ocker Compose 閮ㄧ讲锛堟帹鑽愶級
 
-### 1. 克隆项目
+### 1. 鍏嬮殕椤圭洰
 
 ```bash
 git clone https://github.com/nexuspay/nexus-pay-java.git
 cd nexus-pay-java
 ```
 
-### 2. 配置环境变量
+### 2. 閰嶇疆鐜鍙橀噺
 
 ```bash
 cp .env.example .env
 ```
 
-编辑 `.env` 文件：
-
+缂栬緫 `.env` 鏂囦欢锛?
 ```env
-# 数据库
-DATABASE_URL=jdbc:postgresql://db:5432/nexuspay
+# 鏁版嵁搴?DATABASE_URL=jdbc:postgresql://db:5432/nexuspay
 DATABASE_USERNAME=postgres
 DATABASE_PASSWORD=your_password
 
 # JWT
 JWT_SECRET=your_jwt_secret_at_least_256_bits
 
-# Provider Keys (可选)
+# Provider Keys (鍙€?
 STRIPE_SECRET_KEY=sk_test_xxx
 SQUARE_ACCESS_TOKEN=xxx
 BRAINTREE_MERCHANT_ID=xxx
@@ -46,32 +44,29 @@ BRAINTREE_PUBLIC_KEY=xxx
 BRAINTREE_PRIVATE_KEY=xxx
 ```
 
-### 3. 启动服务
+### 3. 鍚姩鏈嶅姟
 
 ```bash
 docker compose up -d
 ```
 
-### 4. 访问服务
+### 4. 璁块棶鏈嶅姟
 
-| 服务 | 地址 |
+| 鏈嶅姟 | 鍦板潃 |
 |------|------|
 | API | http://localhost:8080 |
 | Swagger UI | http://localhost:8080/swagger-ui.html |
-| 商户后台 | http://localhost:5173 |
-| 运营管理端 | http://localhost:5174 |
+| 鍟嗘埛鍚庡彴 | http://localhost:5173 |
+| 杩愯惀绠＄悊绔?| http://localhost:5174 |
 
 ---
 
-## 二、本地开发部署
-
-### 1. 数据库
-
+## 浜屻€佹湰鍦板紑鍙戦儴缃?
+### 1. 鏁版嵁搴?
 ```bash
-# 创建数据库
-createdb nexuspay
+# 鍒涘缓鏁版嵁搴?createdb nexuspay
 
-# 或使用 Docker
+# 鎴栦娇鐢?Docker
 docker run -d --name nexuspay-db \
   -e POSTGRES_DB=nexuspay \
   -e POSTGRES_PASSWORD=postgres \
@@ -79,52 +74,51 @@ docker run -d --name nexuspay-db \
   postgres:16
 ```
 
-### 2. 后端
+### 2. 鍚庣
 
 ```bash
-# 安装依赖
+# 瀹夎渚濊禆
 mvn clean install
 
-# 启动
+# 鍚姩
 cd nexuspay-web
 mvn spring-boot:run
 ```
 
-### 3. 前端
+### 3. 鍓嶇
 
-**商户后台：**
+**鍟嗘埛鍚庡彴锛?*
 ```bash
-cd frontend
+cd frontend-dashboard
 npm install
 npm run dev
 ```
 
-**运营管理端：**
+**杩愯惀绠＄悊绔細**
 ```bash
 cd frontend-admin
 npm install
 npm run dev
 ```
 
-**Element SDK：**
+**Element SDK锛?*
 ```bash
-cd nexuspay-js
+cd frontend-nexuspay-js
 npm install
 npm run build
 ```
 
 ---
 
-## 三、生产部署
-
-### 1. 构建生产镜像
+## 涓夈€佺敓浜ч儴缃?
+### 1. 鏋勫缓鐢熶骇闀滃儚
 
 ```bash
-# 后端
+# 鍚庣
 docker build -t nexuspay-api:latest .
 
-# 前端
-cd frontend && docker build -t nexuspay-dashboard:latest .
+# 鍓嶇
+cd frontend-dashboard && docker build -t nexuspay-dashboard:latest .
 cd frontend-admin && docker build -t nexuspay-admin:latest .
 ```
 
@@ -190,7 +184,7 @@ volumes:
   redis_data:
 ```
 
-### 3. 启动
+### 3. 鍚姩
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d
@@ -198,7 +192,7 @@ docker compose -f docker-compose.prod.yml up -d
 
 ---
 
-## 四、Kubernetes 部署
+## 鍥涖€並ubernetes 閮ㄧ讲
 
 ### 1. Namespace
 
@@ -298,9 +292,9 @@ spec:
 
 ---
 
-## 五、SSL/TLS 配置
+## 浜斻€丼SL/TLS 閰嶇疆
 
-### 1. 使用 Nginx 反向代理
+### 1. 浣跨敤 Nginx 鍙嶅悜浠ｇ悊
 
 ```nginx
 server {
@@ -320,7 +314,7 @@ server {
 }
 ```
 
-### 2. 使用 Let's Encrypt
+### 2. 浣跨敤 Let's Encrypt
 
 ```bash
 certbot --nginx -d api.nexuspay.com -d dashboard.nexuspay.com
@@ -328,8 +322,7 @@ certbot --nginx -d api.nexuspay.com -d dashboard.nexuspay.com
 
 ---
 
-## 六、监控
-
+## 鍏€佺洃鎺?
 ### 1. Prometheus
 
 ```yaml
@@ -343,27 +336,25 @@ scrape_configs:
 
 ### 2. Grafana Dashboard
 
-导入 Spring Boot Dashboard 模板，监控：
-- JVM 内存
-- HTTP 请求
-- 数据库连接池
-- 自定义指标
-
+瀵煎叆 Spring Boot Dashboard 妯℃澘锛岀洃鎺э細
+- JVM 鍐呭瓨
+- HTTP 璇锋眰
+- 鏁版嵁搴撹繛鎺ユ睜
+- 鑷畾涔夋寚鏍?
 ---
 
-## 七、备份与恢复
+## 涓冦€佸浠戒笌鎭㈠
 
-### 1. 数据库备份
-
+### 1. 鏁版嵁搴撳浠?
 ```bash
-# 备份
+# 澶囦唤
 docker exec nexuspay-db pg_dump -U postgres nexuspay > backup.sql
 
-# 恢复
+# 鎭㈠
 docker exec -i nexuspay-db psql -U postgres nexuspay < backup.sql
 ```
 
-### 2. 自动备份脚本
+### 2. 鑷姩澶囦唤鑴氭湰
 
 ```bash
 #!/bin/bash
@@ -374,35 +365,32 @@ find /backups -name "*.sql" -mtime +7 -delete
 
 ---
 
-## 八、故障排查
-
-### 1. 查看日志
+## 鍏€佹晠闅滄帓鏌?
+### 1. 鏌ョ湅鏃ュ織
 
 ```bash
 # Docker logs
 docker compose logs api
 
-# 应用日志
+# 搴旂敤鏃ュ織
 tail -f /var/log/nexuspay/application.log
 ```
 
-### 2. 健康检查
-
+### 2. 鍋ュ悍妫€鏌?
 ```bash
 curl http://localhost:8080/actuator/health
 ```
 
-### 3. 数据库连接
-
+### 3. 鏁版嵁搴撹繛鎺?
 ```bash
 docker exec -it nexuspay-db psql -U postgres -d nexuspay
 ```
 
 ---
 
-## 九、性能调优
+## 涔濄€佹€ц兘璋冧紭
 
-### 1. JVM 参数
+### 1. JVM 鍙傛暟
 
 ```bash
 java -Xms512m -Xmx1g -XX:+UseG1GC -jar nexuspay-web.jar
@@ -425,3 +413,4 @@ events {
     worker_connections 1024;
 }
 ```
+

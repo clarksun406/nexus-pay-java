@@ -1,4 +1,4 @@
-# Contributing to NexusPay
+﻿# Contributing to NexusPay
 
 ## Development Setup
 
@@ -20,7 +20,7 @@ mvn clean install
 cd nexuspay-web && mvn spring-boot:run
 
 # Frontend
-cd frontend && npm install && npm run dev
+cd frontend-dashboard && npm install && npm run dev
 ```
 
 ---
@@ -29,15 +29,15 @@ cd frontend && npm install && npm run dev
 
 ```
 nexuspay-java/
-├── nexuspay-common/      # Common utilities
-├── nexuspay-domain/      # Domain entities
-├── nexuspay-repository/  # Data access
-├── nexuspay-service/     # Business logic
-├── nexuspay-web/         # REST API
-├── frontend/             # Merchant dashboard
-├── frontend-admin/       # Admin portal
-├── nexuspay-js/          # Element SDK
-└── docs/                 # Documentation
+鈹溾攢鈹€ nexuspay-common/      # Common utilities
+鈹溾攢鈹€ nexuspay-domain/      # Domain entities
+鈹溾攢鈹€ nexuspay-repository/  # Data access
+鈹溾攢鈹€ nexuspay-service/     # Business logic
+鈹溾攢鈹€ nexuspay-web/         # REST API
+鈹溾攢鈹€ frontend-dashboard/             # Merchant dashboard
+鈹溾攢鈹€ frontend-admin/       # Admin portal
+鈹溾攢鈹€ frontend-nexuspay-js/          # Element SDK
+鈹斺攢鈹€ docs/                 # Documentation
 ```
 
 ---
@@ -98,7 +98,7 @@ mvn test
 mvn verify
 
 # Frontend tests
-cd frontend && npm run test
+cd frontend-dashboard && npm run test
 ```
 
 ---
@@ -106,3 +106,5 @@ cd frontend && npm run test
 ## Need Help?
 
 Open an issue or start a discussion on GitHub.
+
+

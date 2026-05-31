@@ -1,4 +1,4 @@
-# NexusPay Java
+﻿# NexusPay Java
 
 Payment gateway orchestration system built with Java 17, Spring Boot 3, and Domain-Driven Design architecture.
 
@@ -18,42 +18,42 @@ NexusPay is a production-ready payment gateway that provides a single, consisten
 ## Features
 
 ### Payments
-- **PaymentIntent state machine** — REQUIRES_PAYMENT_METHOD → REQUIRES_CONFIRMATION → PROCESSING → REQUIRES_ACTION → REQUIRES_CAPTURE → SUCCEEDED / FAILED / CANCELED
-- **Idempotency keys** — Safe replay returns existing intent
-- **Manual / automatic capture** — Stripe capture_method, Square autocomplete, Braintree authorizePaymentMethod
-- **3DS / SCA** — REQUIRES_ACTION with next_action URL for hosted checkout
-- **Refunds** — Full or partial, with webhook events
+- **PaymentIntent state machine** 鈥?REQUIRES_PAYMENT_METHOD 鈫?REQUIRES_CONFIRMATION 鈫?PROCESSING 鈫?REQUIRES_ACTION 鈫?REQUIRES_CAPTURE 鈫?SUCCEEDED / FAILED / CANCELED
+- **Idempotency keys** 鈥?Safe replay returns existing intent
+- **Manual / automatic capture** 鈥?Stripe capture_method, Square autocomplete, Braintree authorizePaymentMethod
+- **3DS / SCA** 鈥?REQUIRES_ACTION with next_action URL for hosted checkout
+- **Refunds** 鈥?Full or partial, with webhook events
 
 ### Connectors & Routing
-- **Multi-connector support** — Multiple accounts per provider (e.g., two Stripe accounts)
-- **Per-connector fee config** — { fixed, percentage } for routing and payouts
-- **Routing rules** — Match by currency, amount range, country, payment method type
-- **Selection strategies** — Weighted-random (default) or cheapest-by-fees
-- **Fallback connector** — Per-rule fallback support
+- **Multi-connector support** 鈥?Multiple accounts per provider (e.g., two Stripe accounts)
+- **Per-connector fee config** 鈥?{ fixed, percentage } for routing and payouts
+- **Routing rules** 鈥?Match by currency, amount range, country, payment method type
+- **Selection strategies** 鈥?Weighted-random (default) or cheapest-by-fees
+- **Fallback connector** 鈥?Per-rule fallback support
 
 ### Checkout
-- **Payment links** — `/pub/pay/:token` for hosted checkout
-- **Embedded flow** — `/pub/tokenize` returns gw_tok_… for secret-key flow
+- **Payment links** 鈥?`/pub/pay/:token` for hosted checkout
+- **Embedded flow** 鈥?`/pub/tokenize` returns gw_tok_鈥?for secret-key flow
 
 ### Dispute Handling
-- **Inbound webhooks** — Ingest disputes from all providers
-- **Evidence submission** — Draft + submit to Stripe
-- **Status tracking** — OPEN, UNDER_REVIEW, WON, LOST, etc.
+- **Inbound webhooks** 鈥?Ingest disputes from all providers
+- **Evidence submission** 鈥?Draft + submit to Stripe
+- **Status tracking** 鈥?OPEN, UNDER_REVIEW, WON, LOST, etc.
 
 ### Reconciliation
-- **Payout summaries** — Hourly aggregation per (merchant, connector, currency, mode)
-- **Itemized breakdown** — Per-payment details
+- **Payout summaries** 鈥?Hourly aggregation per (merchant, connector, currency, mode)
+- **Itemized breakdown** 鈥?Per-payment details
 
 ### Webhooks
-- **Outbound** — HMAC-SHA256 signing with X-NexusPay-Signature
-- **Inbound** — Stripe, Square, Braintree signature verification
-- **Transactional outbox** — Reliable delivery with retries
+- **Outbound** 鈥?HMAC-SHA256 signing with X-NexusPay-Signature
+- **Inbound** 鈥?Stripe, Square, Braintree signature verification
+- **Transactional outbox** 鈥?Reliable delivery with retries
 
 ### Security
-- **Rate limiting** — Token bucket on /auth, /pub, /api/v1/payment-intents
-- **Audit logging** — gateway_logs with trace IDs
-- **RBAC** — OWNER, ADMIN, DEVELOPER, FINANCE, VIEWER
-- **MFA** — TOTP-based two-factor authentication
+- **Rate limiting** 鈥?Token bucket on /auth, /pub, /api/v1/payment-intents
+- **Audit logging** 鈥?gateway_logs with trace IDs
+- **RBAC** 鈥?OWNER, ADMIN, DEVELOPER, FINANCE, VIEWER
+- **MFA** 鈥?TOTP-based two-factor authentication
 
 ## Tech Stack
 
@@ -71,31 +71,8 @@ NexusPay is a production-ready payment gateway that provides a single, consisten
 ## Architecture
 
 ```
-                        ┌────────────────────────────────────────────────┐
-                        │                  Frontend (Vue 3)              │
-                        │   Dashboard · Hosted Pay · Embedded Checkout   │
-                        └──────────────┬─────────────────────────────────┘
-                                       │ HTTPS
-                                       ▼
-   ┌───────────────────────────────────────────────────────────────────────┐
-   │                          Backend API (Spring Boot)                   │
-   │                                                                      │
-   │   /api/v1/auth      /api/v1/me        /api/v1/payment-intents        │
-   │   /api/v1/merchants /pub/...          /webhooks/{stripe,square,bt}   │
-   │                                                                      │
-   │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────┐  │
-   │  │ Routing      │→ │ Provider     │  │ Webhook      │  │ Payout   │  │
-   │  │ Engine       │  │ Dispatcher   │  │ Worker       │  │ Worker   │  │
-   │  └──────────────┘  └──────┬───────┘  └──────┬───────┘  └────┬─────┘  │
-   └─────────────────────────────┼─────────────────┼───────────────┼──────┘
-                                 │                 │               │
-                                 ▼                 ▼               ▼
-                       ┌─────────────────┐ ┌──────────────────┐ ┌──────────┐
-                       │ Stripe / Square │ │  Postgres        │ │ Postgres │
-                       │ Braintree APIs  │ │  (intents,       │ │ (payouts)│
-                       └─────────────────┘ │  outbox, logs…)  │ └──────────┘
-                                           └──────────────────┘
-```
+                        鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                        鈹?                 Frontend (Vue 3)              鈹?                        鈹?  Dashboard 路 Hosted Pay 路 Embedded Checkout   鈹?                        鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                                       鈹?HTTPS
+                                       鈻?   鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?   鈹?                         Backend API (Spring Boot)                   鈹?   鈹?                                                                     鈹?   鈹?  /api/v1/auth      /api/v1/me        /api/v1/payment-intents        鈹?   鈹?  /api/v1/merchants /pub/...          /webhooks/{stripe,square,bt}   鈹?   鈹?                                                                     鈹?   鈹? 鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹? 鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹? 鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹? 鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹? 鈹?   鈹? 鈹?Routing      鈹傗啋 鈹?Provider     鈹? 鈹?Webhook      鈹? 鈹?Payout   鈹? 鈹?   鈹? 鈹?Engine       鈹? 鈹?Dispatcher   鈹? 鈹?Worker       鈹? 鈹?Worker   鈹? 鈹?   鈹? 鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹? 鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹攢鈹€鈹€鈹€鈹€鈹€鈹€鈹? 鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹攢鈹€鈹€鈹€鈹€鈹€鈹€鈹? 鈹斺攢鈹€鈹€鈹€鈹攢鈹€鈹€鈹€鈹€鈹? 鈹?   鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹尖攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹尖攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹尖攢鈹€鈹€鈹€鈹€鈹€鈹?                                 鈹?                鈹?              鈹?                                 鈻?                鈻?              鈻?                       鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                       鈹?Stripe / Square 鈹?鈹? Postgres        鈹?鈹?Postgres 鈹?                       鈹?Braintree APIs  鈹?鈹? (intents,       鈹?鈹?(payouts)鈹?                       鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? outbox, logs鈥?  鈹?鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                                           鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?```
 
 ## Quick Start
 
@@ -125,7 +102,7 @@ mvn spring-boot:run
 
 **3. Frontend**
 ```bash
-cd frontend
+cd frontend-dashboard
 npm install
 npm run dev
 ```
@@ -174,18 +151,18 @@ Open http://localhost:5173 and register. The first registration creates a mercha
 ## Provider Setup
 
 ### Stripe
-1. Get secret key (sk_test_… or sk_live_…)
-2. Connectors → New connector → Stripe
+1. Get secret key (sk_test_鈥?or sk_live_鈥?
+2. Connectors 鈫?New connector 鈫?Stripe
 3. Configure webhook at `${PAY_BASE_URL}/webhooks/stripe`
 
 ### Square
 1. Get access token and location ID
-2. Connectors → New connector → Square
+2. Connectors 鈫?New connector 鈫?Square
 3. Configure webhook signature key
 
 ### Braintree
 1. Get public/private key pair
-2. Connectors → New connector → Braintree
+2. Connectors 鈫?New connector 鈫?Braintree
 3. Webhook verification handled automatically
 
 ## Environment Variables
@@ -219,3 +196,4 @@ MIT
 3. Commit changes (`git commit -m 'Add amazing feature'`)
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+

@@ -1,30 +1,41 @@
-import { Element } from '../core/Element';
-import { SetupElementOptions, TokenResult } from '../types';
+﻿import { Element } from '../core/Element';
+import { PaymentElementOptions, TokenResult } from '../types';
 import { createIframe, sendMessage, receiveMessages } from '../utils/postMessage';
 
-export class SetupElement extends Element {
-  private options: SetupElementOptions;
+export class PaymentElement extends Element {
+  private options: PaymentElementOptions;
   private config: any;
   private iframe: HTMLIFrameElement | null = null;
   private iframeOrigin: string;
 
-  constructor(config: any, options: SetupElementOptions = {}) {
+  constructor(config: any, options: PaymentElementOptions = {}) {
     super();
     this.config = config;
     this.options = options;
-    this._state.elementType = 'setup';
+    this._state.elementType = 'payment';
     this.iframeOrigin = config.apiBase || 'http://localhost:8080';
   }
 
   mount(selector: string | HTMLElement): void {
     this.container = this.resolveContainer(selector);
-    const iframeUrl = `${this.iframeOrigin}/pub/elements/card.html?mode=setup`;
-    this.iframe = createIframe(iframeUrl);
+    
+    const params = new URLSearchParams({
+      amount: String(this.options.amount || 0),
+      currency: this.options.currency || 'usd',
+      layout: this.options.layout || 'auto',
+      methods: (this.options.paymentMethodTypes || ['card']).join(','),
+    });
+    
+    const iframeUrl = `${this.iframeOrigin}/pub/elements/payment.html?${params}`;
+    this.iframe = createIframe(iframeUrl, { height: '400px' });
     this.container.appendChild(this.iframe);
 
     receiveMessages(this.iframeOrigin, (message) => {
       if (message.type === 'nexuspay:ready') this.emit('ready');
       if (message.type === 'nexuspay:change') this.updateState(message.payload);
+      if (message.type === 'nexuspay:payment_method_selected') {
+        this.updateState({ ...this._state, brand: message.payload.method });
+      }
     });
   }
 
@@ -45,7 +56,12 @@ export class SetupElement extends Element {
         }
       };
       window.addEventListener('message', handler);
-      sendMessage(this.iframe.contentWindow, this.iframeOrigin, { type: 'nexuspay:tokenize' });
+      const win = this.iframe?.contentWindow;
+      if (!win) {
+        resolve({ error: { type: 'invalid_request_error', message: 'Element not mounted' } });
+        return;
+      }
+      sendMessage(win, this.iframeOrigin, { type: 'nexuspay:tokenize' });
     });
   }
 
@@ -54,3 +70,4 @@ export class SetupElement extends Element {
     this.iframe = null;
   }
 }
+

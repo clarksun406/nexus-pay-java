@@ -1,4 +1,4 @@
-import { Element } from '../core/Element';
+﻿import { Element } from '../core/Element';
 import { CardElementOptions, TokenResult, ElementChangeEvent } from '../types';
 import { createIframe, sendMessage, receiveMessages } from '../utils/postMessage';
 
@@ -110,7 +110,13 @@ export class CardElement extends Element {
       });
 
       // Request tokenization
-      sendMessage(this.iframe.contentWindow!, this.iframeOrigin, {
+      const win = this.iframe?.contentWindow;
+      if (!win) {
+        resolve({ error: { type: 'invalid_request_error', message: 'Element not mounted' } });
+        return;
+      }
+
+      sendMessage(win, this.iframeOrigin, {
         type: 'nexuspay:tokenize',
       });
     });
@@ -141,3 +147,4 @@ export class CardElement extends Element {
     }
   }
 }
+

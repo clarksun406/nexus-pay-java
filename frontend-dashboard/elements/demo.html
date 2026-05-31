@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -109,35 +109,35 @@
 <body>
   <div class="container">
     <h1>NexusPay Elements Demo</h1>
-    <p class="subtitle">演示如何使用 NexusPay Elements SDK 接收支付</p>
+    <p class="subtitle">婕旂ず濡備綍浣跨敤 NexusPay Elements SDK 鎺ユ敹鏀粯</p>
     
     <div class="card">
       <div class="card-header">
-        <h2>支付方式</h2>
-        <p>选择支付方式并完成支付</p>
+        <h2>鏀粯鏂瑰紡</h2>
+        <p>閫夋嫨鏀粯鏂瑰紡骞跺畬鎴愭敮浠?/p>
       </div>
       
       <div class="tabs">
-        <div class="tab active" data-tab="card">银行卡</div>
-        <div class="tab" data-tab="apm">其他方式</div>
-        <div class="tab" data-tab="setup">保存卡片</div>
+        <div class="tab active" data-tab="card">閾惰鍗?/div>
+        <div class="tab" data-tab="apm">鍏朵粬鏂瑰紡</div>
+        <div class="tab" data-tab="setup">淇濆瓨鍗＄墖</div>
       </div>
       
       <!-- Card Element -->
       <div id="card-tab" class="tab-content">
         <div class="form-group">
-          <label>邮箱</label>
+          <label>閭</label>
           <input type="email" id="email" placeholder="receipt@example.com" value="test@example.com">
         </div>
         <div class="form-group">
-          <label>金额 (CNY)</label>
+          <label>閲戦 (CNY)</label>
           <input type="number" id="amount" value="100" min="1">
         </div>
         <div class="form-group">
-          <label>卡信息</label>
+          <label>鍗′俊鎭?/label>
           <div id="card-element"></div>
         </div>
-        <button class="btn btn-primary" id="pay-btn">支付 ¥100</button>
+        <button class="btn btn-primary" id="pay-btn">鏀粯 楼100</button>
       </div>
       
       <!-- APM Tab -->
@@ -145,18 +145,18 @@
         <div class="apm-buttons">
           <button class="btn" style="background: #000;" id="applepay-btn">Apple Pay</button>
           <button class="btn" style="background: #4285f4; color: white;" id="googlepay-btn">Google Pay</button>
-          <button class="btn" style="background: #1677FF; color: white;" id="alipay-btn">支付宝</button>
-          <button class="btn" style="background: #07C160; color: white;" id="wechat-btn">微信支付</button>
+          <button class="btn" style="background: #1677FF; color: white;" id="alipay-btn">鏀粯瀹?/button>
+          <button class="btn" style="background: #07C160; color: white;" id="wechat-btn">寰俊鏀粯</button>
         </div>
       </div>
       
       <!-- Setup Tab -->
       <div id="setup-tab" class="tab-content" style="display: none;">
         <div class="form-group">
-          <label>卡信息</label>
+          <label>鍗′俊鎭?/label>
           <div id="setup-element"></div>
         </div>
-        <button class="btn btn-primary" id="setup-btn">保存卡片</button>
+        <button class="btn btn-primary" id="setup-btn">淇濆瓨鍗＄墖</button>
       </div>
       
       <div id="result"></div>
@@ -164,7 +164,7 @@
   </div>
 
   <!-- Load NexusPay SDK -->
-  <script src="../nexuspay-js/dist/nexuspay.umd.js"></script>
+  <script src="../../frontend-nexuspay-js/dist/nexuspay.umd.js"></script>
   <script>
     // Initialize NexusPay
     const nexuspay = Nexuspay('pk_test_demo', {
@@ -196,7 +196,7 @@
     
     // Amount change
     document.getElementById('amount').addEventListener('input', (e) => {
-      document.getElementById('pay-btn').textContent = `支付 ¥${e.target.value}`;
+      document.getElementById('pay-btn').textContent = `鏀粯 楼${e.target.value}`;
     });
     
     // Pay button
@@ -205,7 +205,7 @@
       const result = document.getElementById('result');
       
       btn.disabled = true;
-      btn.textContent = '处理中...';
+      btn.textContent = '澶勭悊涓?..';
       
       try {
         const { token, error } = await nexuspay.createToken(cardElement);
@@ -235,17 +235,17 @@
         
         if (data.status === 'SUCCEEDED') {
           result.className = 'success';
-          result.textContent = `支付成功！支付 ID: ${data.id}`;
+          result.textContent = `鏀粯鎴愬姛锛佹敮浠?ID: ${data.id}`;
         } else {
           result.className = 'error';
-          result.textContent = `支付状态: ${data.status}`;
+          result.textContent = `鏀粯鐘舵€? ${data.status}`;
         }
       } catch (e) {
         result.className = 'error';
         result.textContent = e.message;
       } finally {
         btn.disabled = false;
-        btn.textContent = `支付 ¥${document.getElementById('amount').value}`;
+        btn.textContent = `鏀粯 楼${document.getElementById('amount').value}`;
       }
     });
     
@@ -258,7 +258,7 @@
       const result = document.getElementById('result');
       
       btn.disabled = true;
-      btn.textContent = '保存中...';
+      btn.textContent = '淇濆瓨涓?..';
       
       try {
         const { token, error } = await nexuspay.createToken(setupElement);
@@ -270,15 +270,18 @@
         }
         
         result.className = 'success';
-        result.textContent = `卡片已保存！PaymentMethod: ${token}`;
+        result.textContent = `鍗＄墖宸蹭繚瀛橈紒PaymentMethod: ${token}`;
       } catch (e) {
         result.className = 'error';
         result.textContent = e.message;
       } finally {
         btn.disabled = false;
-        btn.textContent = '保存卡片';
+        btn.textContent = '淇濆瓨鍗＄墖';
       }
     });
   </script>
 </body>
 </html>
+
+
+

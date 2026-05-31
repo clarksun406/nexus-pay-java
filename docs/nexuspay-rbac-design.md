@@ -1,72 +1,68 @@
-# NexusPay RBAC 设计文档
+﻿# NexusPay RBAC 璁捐鏂囨。
 
-## 一、当前状态
+## 涓€銆佸綋鍓嶇姸鎬?
+### 1.1 鐜版湁鐢ㄦ埛浣撶郴
 
-### 1.1 现有用户体系
-
-| 实体 | 说明 | 角色 |
+| 瀹炰綋 | 璇存槑 | 瑙掕壊 |
 |------|------|------|
-| `User` | 用户基础信息（共享） | - |
-| `MerchantUser` | 商户-用户关联 | OWNER, ADMIN, DEVELOPER, FINANCE, VIEWER |
-| `OrganizationUser` | 组织-用户关联 | ORG_OWNER, ORG_ADMIN, ORG_MEMBER |
+| `User` | 鐢ㄦ埛鍩虹淇℃伅锛堝叡浜級 | - |
+| `MerchantUser` | 鍟嗘埛-鐢ㄦ埛鍏宠仈 | OWNER, ADMIN, DEVELOPER, FINANCE, VIEWER |
+| `OrganizationUser` | 缁勭粐-鐢ㄦ埛鍏宠仈 | ORG_OWNER, ORG_ADMIN, ORG_MEMBER |
 
-### 1.2 当前问题
+### 1.2 褰撳墠闂
 
-| 问题 | 说明 |
+| 闂 | 璇存槑 |
 |------|------|
-| 权限粒度粗 | 角色枚举，无细粒度权限 |
-| 无统一权限检查 | 缺少 `@RequirePermission` 注解 |
-| 运营端登录缺失 | 无 `/api/v1/admin/auth/login` |
-| 运营端认证缺失 | 无 Admin JWT Filter |
+| 鏉冮檺绮掑害绮?| 瑙掕壊鏋氫妇锛屾棤缁嗙矑搴︽潈闄?|
+| 鏃犵粺涓€鏉冮檺妫€鏌?| 缂哄皯 `@RequirePermission` 娉ㄨВ |
+| 杩愯惀绔櫥褰曠己澶?| 鏃?`/api/v1/admin/auth/login` |
+| 杩愯惀绔璇佺己澶?| 鏃?Admin JWT Filter |
 
 ---
 
-## 二、设计方案
-
-### 2.1 统一 RBAC 模型
+## 浜屻€佽璁℃柟妗?
+### 2.1 缁熶竴 RBAC 妯″瀷
 
 ```
-User (用户)
-├── UserRole (用户-角色关联)
-│   ├── roleId
-│   ├── scopeType: MERCHANT, ORGANIZATION, SYSTEM
-│   └── scopeId: merchantId 或 organizationId
-│
-Role (角色)
-├── name: MERCHANT_OWNER, ORG_ADMIN...
-├── type: MERCHANT, ORG, SYSTEM
-└── permissions: List<Permission>
-│
-Permission (权限)
-├── code: MERCHANT_READ, PAYMENT_CREATE...
-└── description
+User (鐢ㄦ埛)
+鈹溾攢鈹€ UserRole (鐢ㄦ埛-瑙掕壊鍏宠仈)
+鈹?  鈹溾攢鈹€ roleId
+鈹?  鈹溾攢鈹€ scopeType: MERCHANT, ORGANIZATION, SYSTEM
+鈹?  鈹斺攢鈹€ scopeId: merchantId 鎴?organizationId
+鈹?Role (瑙掕壊)
+鈹溾攢鈹€ name: MERCHANT_OWNER, ORG_ADMIN...
+鈹溾攢鈹€ type: MERCHANT, ORG, SYSTEM
+鈹斺攢鈹€ permissions: List<Permission>
+鈹?Permission (鏉冮檺)
+鈹溾攢鈹€ code: MERCHANT_READ, PAYMENT_CREATE...
+鈹斺攢鈹€ description
 ```
 
-### 2.2 权限矩阵
+### 2.2 鏉冮檺鐭╅樀
 
-**商户端权限：**
+**鍟嗘埛绔潈闄愶細**
 
-| 角色 | 权限 |
+| 瑙掕壊 | 鏉冮檺 |
 |------|------|
-| MERCHANT_OWNER | 所有商户权限 + 成员管理 + API Key 管理 |
-| MERCHANT_ADMIN | 商户配置 + 连接器管理 + 路由规则 |
-| MERCHANT_DEVELOPER | 支付查看 + Webhook 配置 + 测试模式 |
-| MERCHANT_FINANCE | 退款管理 + 结算查看 + 争议处理 |
-| MERCHANT_VIEWER | 只读访问 |
+| MERCHANT_OWNER | 鎵€鏈夊晢鎴锋潈闄?+ 鎴愬憳绠＄悊 + API Key 绠＄悊 |
+| MERCHANT_ADMIN | 鍟嗘埛閰嶇疆 + 杩炴帴鍣ㄧ鐞?+ 璺敱瑙勫垯 |
+| MERCHANT_DEVELOPER | 鏀粯鏌ョ湅 + Webhook 閰嶇疆 + 娴嬭瘯妯″紡 |
+| MERCHANT_FINANCE | 閫€娆剧鐞?+ 缁撶畻鏌ョ湅 + 浜夎澶勭悊 |
+| MERCHANT_VIEWER | 鍙璁块棶 |
 
-**运营端权限：**
+**杩愯惀绔潈闄愶細**
 
-| 角色 | 权限 |
+| 瑙掕壊 | 鏉冮檺 |
 |------|------|
-| ORG_OWNER | 组织所有权限 + 商户管理 + 成员管理 |
-| ORG_ADMIN | 商户审核 + 系统监控 + 配置管理 |
-| ORG_MEMBER | 只读访问 |
+| ORG_OWNER | 缁勭粐鎵€鏈夋潈闄?+ 鍟嗘埛绠＄悊 + 鎴愬憳绠＄悊 |
+| ORG_ADMIN | 鍟嗘埛瀹℃牳 + 绯荤粺鐩戞帶 + 閰嶇疆绠＄悊 |
+| ORG_MEMBER | 鍙璁块棶 |
 
-### 2.3 权限代码定义
+### 2.3 鏉冮檺浠ｇ爜瀹氫箟
 
 ```java
 public enum Permission {
-    // 商户权限
+    // 鍟嗘埛鏉冮檺
     MERCHANT_READ,
     MERCHANT_WRITE,
     MERCHANT_DELETE,
@@ -84,7 +80,7 @@ public enum Permission {
     CUSTOMER_MANAGE,
     SUBSCRIPTION_MANAGE,
     
-    // 运营权限
+    // 杩愯惀鏉冮檺
     ORG_READ,
     ORG_MANAGE,
     
@@ -99,123 +95,116 @@ public enum Permission {
 
 ---
 
-## 三、需要实现的内容
+## 涓夈€侀渶瑕佸疄鐜扮殑鍐呭
 
-### 3.1 数据库
-
-| 表 | 说明 | 状态 |
+### 3.1 鏁版嵁搴?
+| 琛?| 璇存槑 | 鐘舵€?|
 |----|------|------|
-| `permissions` | 权限定义表 | ❌ 未实现 |
-| `roles` | 角色定义表 | ❌ 未实现 |
-| `role_permissions` | 角色-权限关联表 | ❌ 未实现 |
-| `user_roles` | 用户-角色关联表 | ❌ 未实现 |
+| `permissions` | 鏉冮檺瀹氫箟琛?| 鉂?鏈疄鐜?|
+| `roles` | 瑙掕壊瀹氫箟琛?| 鉂?鏈疄鐜?|
+| `role_permissions` | 瑙掕壊-鏉冮檺鍏宠仈琛?| 鉂?鏈疄鐜?|
+| `user_roles` | 鐢ㄦ埛-瑙掕壊鍏宠仈琛?| 鉂?鏈疄鐜?|
 
-**迁移脚本：** `V6__create_rbac_tables.sql`
+**杩佺Щ鑴氭湰锛?* `V6__create_rbac_tables.sql`
 
-### 3.2 后端实体
+### 3.2 鍚庣瀹炰綋
 
-| 实体 | 文件 | 状态 |
+| 瀹炰綋 | 鏂囦欢 | 鐘舵€?|
 |------|------|------|
-| `Permission` | `entity/Permission.java` | ❌ 未实现 |
-| `Role` | `entity/Role.java` | ❌ 未实现 |
-| `UserRole` | `entity/UserRole.java` | ❌ 未实现 |
+| `Permission` | `entity/Permission.java` | 鉂?鏈疄鐜?|
+| `Role` | `entity/Role.java` | 鉂?鏈疄鐜?|
+| `UserRole` | `entity/UserRole.java` | 鉂?鏈疄鐜?|
 
-### 3.3 后端 Repository
+### 3.3 鍚庣 Repository
 
-| Repository | 文件 | 状态 |
+| Repository | 鏂囦欢 | 鐘舵€?|
 |------------|------|------|
-| `PermissionRepository` | `repository/PermissionRepository.java` | ❌ 未实现 |
-| `RoleRepository` | `repository/RoleRepository.java` | ❌ 未实现 |
-| `UserRoleRepository` | `repository/UserRoleRepository.java` | ❌ 未实现 |
+| `PermissionRepository` | `repository/PermissionRepository.java` | 鉂?鏈疄鐜?|
+| `RoleRepository` | `repository/RoleRepository.java` | 鉂?鏈疄鐜?|
+| `UserRoleRepository` | `repository/UserRoleRepository.java` | 鉂?鏈疄鐜?|
 
-### 3.4 后端 Service
+### 3.4 鍚庣 Service
 
-| Service | 文件 | 功能 | 状态 |
+| Service | 鏂囦欢 | 鍔熻兘 | 鐘舵€?|
 |---------|------|------|------|
-| `PermissionService` | `service/PermissionService.java` | 权限检查 | ❌ 未实现 |
-| `RoleService` | `service/RoleService.java` | 角色管理 | ❌ 未实现 |
+| `PermissionService` | `service/PermissionService.java` | 鏉冮檺妫€鏌?| 鉂?鏈疄鐜?|
+| `RoleService` | `service/RoleService.java` | 瑙掕壊绠＄悊 | 鉂?鏈疄鐜?|
 
-### 3.5 权限注解
+### 3.5 鏉冮檺娉ㄨВ
 
-| 组件 | 文件 | 功能 | 状态 |
+| 缁勪欢 | 鏂囦欢 | 鍔熻兘 | 鐘舵€?|
 |------|------|------|------|
-| `@RequirePermission` | `annotation/RequirePermission.java` | 权限注解 | ❌ 未实现 |
-| `PermissionAspect` | `aop/PermissionAspect.java` | AOP 权限检查 | ❌ 未实现 |
+| `@RequirePermission` | `annotation/RequirePermission.java` | 鏉冮檺娉ㄨВ | 鉂?鏈疄鐜?|
+| `PermissionAspect` | `aop/PermissionAspect.java` | AOP 鏉冮檺妫€鏌?| 鉂?鏈疄鐜?|
 
-### 3.6 认证增强
+### 3.6 璁よ瘉澧炲己
 
-| 组件 | 文件 | 功能 | 状态 |
+| 缁勪欢 | 鏂囦欢 | 鍔熻兘 | 鐘舵€?|
 |------|------|------|------|
-| 运营端登录 API | `controller/AdminAuthController.java` | `/api/v1/admin/auth/login` | ❌ 未实现 |
-| Admin JWT Filter | `security/AdminJwtFilter.java` | 运营端 JWT 认证 | ❌ 未实现 |
-| 权限上下文 | `security/SecurityContext.java` | 当前用户权限 | ❌ 未实现 |
+| 杩愯惀绔櫥褰?API | `controller/AdminAuthController.java` | `/api/v1/admin/auth/login` | 鉂?鏈疄鐜?|
+| Admin JWT Filter | `security/AdminJwtFilter.java` | 杩愯惀绔?JWT 璁よ瘉 | 鉂?鏈疄鐜?|
+| 鏉冮檺涓婁笅鏂?| `security/SecurityContext.java` | 褰撳墠鐢ㄦ埛鏉冮檺 | 鉂?鏈疄鐜?|
 
-### 3.7 前端
+### 3.7 鍓嶇
 
-| 功能 | 页面 | 状态 |
+| 鍔熻兘 | 椤甸潰 | 鐘舵€?|
 |------|------|------|
-| 商户登录 | `frontend/src/pages/Login.vue` | ✅ 已有 |
-| 运营端登录 | `frontend-admin/src/pages/Login.vue` | ❌ 未实现 |
-| 权限路由守卫 | `router/guards.ts` | ❌ 未实现 |
-| 权限指令 | `directives/permission.ts` | ❌ 未实现 |
+| 鍟嗘埛鐧诲綍 | `frontend-dashboard/src/pages/Login.vue` | 鉁?宸叉湁 |
+| 杩愯惀绔櫥褰?| `frontend-admin/src/pages/Login.vue` | 鉂?鏈疄鐜?|
+| 鏉冮檺璺敱瀹堝崼 | `router/guards.ts` | 鉂?鏈疄鐜?|
+| 鏉冮檺鎸囦护 | `directives/permission.ts` | 鉂?鏈疄鐜?|
 
 ---
 
-## 四、实现路线图
+## 鍥涖€佸疄鐜拌矾绾垮浘
 
-### Phase 1: 基础 RBAC (v1.1.0)
+### Phase 1: 鍩虹 RBAC (v1.1.0)
 
-**优先级：🔴 高**
+**浼樺厛绾э細馃敶 楂?*
 
-**后端：**
-- [ ] 创建 Permission, Role, UserRole 实体
-- [ ] 创建数据库迁移脚本
-- [ ] 实现 PermissionService
-- [ ] 实现 @RequirePermission 注解
-- [ ] 实现 PermissionAspect
+**鍚庣锛?*
+- [ ] 鍒涘缓 Permission, Role, UserRole 瀹炰綋
+- [ ] 鍒涘缓鏁版嵁搴撹縼绉昏剼鏈?- [ ] 瀹炵幇 PermissionService
+- [ ] 瀹炵幇 @RequirePermission 娉ㄨВ
+- [ ] 瀹炵幇 PermissionAspect
 
-**预计：3 天**
+**棰勮锛? 澶?*
 
-### Phase 2: 运营端认证 (v1.1.0)
+### Phase 2: 杩愯惀绔璇?(v1.1.0)
 
-**优先级：🔴 高**
+**浼樺厛绾э細馃敶 楂?*
 
-**后端：**
-- [ ] 实现 AdminAuthController
-- [ ] 实现 AdminJwtFilter
-- [ ] 区分商户端/运营端 JWT Claims
+**鍚庣锛?*
+- [ ] 瀹炵幇 AdminAuthController
+- [ ] 瀹炵幇 AdminJwtFilter
+- [ ] 鍖哄垎鍟嗘埛绔?杩愯惀绔?JWT Claims
 
-**前端：**
-- [ ] 实现 frontend-admin 登录页面
-- [ ] 实现登录状态管理
+**鍓嶇锛?*
+- [ ] 瀹炵幇 frontend-admin 鐧诲綍椤甸潰
+- [ ] 瀹炵幇鐧诲綍鐘舵€佺鐞?
+**棰勮锛? 澶?*
 
-**预计：2 天**
+### Phase 3: 鏉冮檺鍒濆鍖?(v1.2.0)
 
-### Phase 3: 权限初始化 (v1.2.0)
+**浼樺厛绾э細馃煛 涓?*
 
-**优先级：🟡 中**
+- [ ] 鏉冮檺鏁版嵁鍒濆鍖栬剼鏈?- [ ] 榛樿瑙掕壊鍒濆鍖?- [ ] 鏁版嵁杩佺Щ锛堢幇鏈?MerchantUser 鈫?UserRole锛?
+**棰勮锛? 澶?*
 
-- [ ] 权限数据初始化脚本
-- [ ] 默认角色初始化
-- [ ] 数据迁移（现有 MerchantUser → UserRole）
+### Phase 4: 鍓嶇鏉冮檺 (v1.2.0)
 
-**预计：2 天**
+**浼樺厛绾э細馃煛 涓?*
 
-### Phase 4: 前端权限 (v1.2.0)
-
-**优先级：🟡 中**
-
-- [ ] 权限路由守卫
-- [ ] v-permission 指令
-- [ ] 权限检查工具函数
-
-**预计：2 天**
+- [ ] 鏉冮檺璺敱瀹堝崼
+- [ ] v-permission 鎸囦护
+- [ ] 鏉冮檺妫€鏌ュ伐鍏峰嚱鏁?
+**棰勮锛? 澶?*
 
 ---
 
-## 五、API 设计
+## 浜斻€丄PI 璁捐
 
-### 5.1 运营端认证 API
+### 5.1 杩愯惀绔璇?API
 
 ```
 POST /api/v1/admin/auth/login
@@ -231,7 +220,7 @@ Request:  { refreshToken }
 Response: { accessToken }
 ```
 
-### 5.2 权限检查 API
+### 5.2 鏉冮檺妫€鏌?API
 
 ```
 GET /api/v1/admin/me/permissions
@@ -243,10 +232,8 @@ Response: { permissions: ["PAYMENT_CREATE", "CONNECTOR_MANAGE"] }
 
 ---
 
-## 六、使用示例
-
-### 6.1 后端权限检查
-
+## 鍏€佷娇鐢ㄧず渚?
+### 6.1 鍚庣鏉冮檺妫€鏌?
 ```java
 @RestController
 @RequestMapping("/api/v1/admin/merchants")
@@ -255,23 +242,21 @@ public class AdminMerchantController {
     @PostMapping("/{id}/approve")
     @RequirePermission("MERCHANT_APPROVE")
     public ResponseEntity<?> approveMerchant(@PathVariable UUID id) {
-        // 只有拥有 MERCHANT_APPROVE 权限的用户可以访问
-    }
+        // 鍙湁鎷ユ湁 MERCHANT_APPROVE 鏉冮檺鐨勭敤鎴峰彲浠ヨ闂?    }
 }
 ```
 
-### 6.2 前端权限检查
-
+### 6.2 鍓嶇鏉冮檺妫€鏌?
 ```vue
 <template>
-  <!-- 按钮级权限控制 -->
+  <!-- 鎸夐挳绾ф潈闄愭帶鍒?-->
   <button v-permission="'MERCHANT_APPROVE'" @click="approve">
-    审核通过
+    瀹℃牳閫氳繃
   </button>
   
-  <!-- 条件渲染 -->
+  <!-- 鏉′欢娓叉煋 -->
   <div v-if="hasPermission('SYSTEM_MONITOR')">
-    系统监控数据...
+    绯荤粺鐩戞帶鏁版嵁...
   </div>
 </template>
 
@@ -283,35 +268,33 @@ const { hasPermission } = usePermission()
 
 ---
 
-## 七、数据迁移
+## 涓冦€佹暟鎹縼绉?
+### 7.1 杩佺Щ绛栫暐
 
-### 7.1 迁移策略
+鐜版湁鏁版嵁锛?- `MerchantUser` 鈫?杩佺Щ鍒?`UserRole`
+- `OrganizationUser` 鈫?杩佺Щ鍒?`UserRole`
 
-现有数据：
-- `MerchantUser` → 迁移到 `UserRole`
-- `OrganizationUser` → 迁移到 `UserRole`
-
-**迁移脚本逻辑：**
+**杩佺Щ鑴氭湰閫昏緫锛?*
 
 ```sql
--- 1. 创建权限
+-- 1. 鍒涘缓鏉冮檺
 INSERT INTO permissions (code, description) VALUES
 ('MERCHANT_READ', 'Read merchant data'),
 ('PAYMENT_CREATE', 'Create payments'),
 -- ...
 
--- 2. 创建角色
+-- 2. 鍒涘缓瑙掕壊
 INSERT INTO roles (name, type) VALUES
 ('MERCHANT_OWNER', 'MERCHANT'),
 ('MERCHANT_ADMIN', 'MERCHANT'),
 -- ...
 
--- 3. 关联角色权限
+-- 3. 鍏宠仈瑙掕壊鏉冮檺
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM roles r, permissions p
 WHERE r.name = 'MERCHANT_OWNER';
 
--- 4. 迁移用户角色
+-- 4. 杩佺Щ鐢ㄦ埛瑙掕壊
 INSERT INTO user_roles (user_id, role_id, scope_type, scope_id)
 SELECT mu.user_id, r.id, 'MERCHANT', mu.merchant_id
 FROM merchant_users mu, roles r
@@ -320,21 +303,21 @@ WHERE r.name = CONCAT('MERCHANT_', mu.role);
 
 ---
 
-## 八、风险与缓解
+## 鍏€侀闄╀笌缂撹В
 
-| 风险 | 影响 | 缓解措施 |
+| 椋庨櫓 | 褰卞搷 | 缂撹В鎺柦 |
 |------|------|----------|
-| 数据迁移失败 | 用户无法登录 | 先备份，事务回滚 |
-| 权限遗漏 | 功能无法访问 | 权限测试用例 |
-| 性能影响 | 权限检查慢 | 缓存用户权限 |
+| 鏁版嵁杩佺Щ澶辫触 | 鐢ㄦ埛鏃犳硶鐧诲綍 | 鍏堝浠斤紝浜嬪姟鍥炴粴 |
+| 鏉冮檺閬楁紡 | 鍔熻兘鏃犳硶璁块棶 | 鏉冮檺娴嬭瘯鐢ㄤ緥 |
+| 鎬ц兘褰卞搷 | 鏉冮檺妫€鏌ユ參 | 缂撳瓨鐢ㄦ埛鏉冮檺 |
 
 ---
 
-## 九、测试计划
-
-| 测试项 | 说明 |
+## 涔濄€佹祴璇曡鍒?
+| 娴嬭瘯椤?| 璇存槑 |
 |--------|------|
-| 权限检查单元测试 | 验证 @RequirePermission 注解 |
-| 认证集成测试 | 商户登录 + 运营端登录 |
-| 权限边界测试 | 无权限访问返回 403 |
-| 数据迁移测试 | 验证迁移后权限正确 |
+| 鏉冮檺妫€鏌ュ崟鍏冩祴璇?| 楠岃瘉 @RequirePermission 娉ㄨВ |
+| 璁よ瘉闆嗘垚娴嬭瘯 | 鍟嗘埛鐧诲綍 + 杩愯惀绔櫥褰?|
+| 鏉冮檺杈圭晫娴嬭瘯 | 鏃犳潈闄愯闂繑鍥?403 |
+| 鏁版嵁杩佺Щ娴嬭瘯 | 楠岃瘉杩佺Щ鍚庢潈闄愭纭?|
+

@@ -1,4 +1,4 @@
-.idea/
+﻿.idea/
 *.iml
 *.iws
 *.ipr
@@ -7,5 +7,7 @@ target/
 .env
 .DS_Store
 .mvn/wrapper/maven-wrapper.jar
-/frontend/node_modules/
-/frontend/dist/
+/frontend-dashboard/node_modules/
+/frontend-dashboard/dist/
+
+

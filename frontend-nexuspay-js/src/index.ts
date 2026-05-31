@@ -1,3 +1,5 @@
+﻿import { Nexuspay } from './core/Nexuspay';
+
 /**
  * NexusPay Elements SDK
  * 
@@ -48,3 +50,4 @@ export type {
 
 // Default export for UMD
 export default Nexuspay;
+

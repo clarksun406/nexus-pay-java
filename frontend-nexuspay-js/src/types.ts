@@ -1,3 +1,5 @@
+﻿import type { Elements } from './core/Elements';
+
 // NexusPay SDK Type Definitions
 
 export interface NexuspayOptions {
@@ -164,3 +166,4 @@ export interface ConfirmSetupOptions {
   };
   redirect?: 'if_required' | 'always';
 }
+

@@ -1,4 +1,4 @@
-version: '3.8'
+﻿version: '3.8'
 
 services:
   postgres:
@@ -28,7 +28,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./frontend-dashboard
       dockerfile: Dockerfile
     ports:
       - "5173:80"
@@ -37,3 +37,5 @@ services:
 
 volumes:
   postgres_data:
+
+

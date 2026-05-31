@@ -52,9 +52,9 @@
 - [x] Rate limiting on /auth, /pub, /api/v1/payment-intents
 - [x] Gateway request logging with trace IDs
 - [x] Outbox pattern for reliable webhook delivery
-- [ ] AES-256-GCM credential encryption (pending)
-- [ ] Password reset flow (pending)
-- [ ] MFA backup codes (pending)
+- [x] AES-256-GCM credential encryption
+- [x] Password reset flow
+- [x] MFA backup codes
 
 ---
 
@@ -184,9 +184,9 @@
 | Rate limiting | ✅ | ✅ | Complete |
 | Audit logging | ✅ | ✅ | Complete |
 | Embedded checkout | ✅ | ✅ | Complete |
-| AES-256-GCM encryption | ✅ | ⚠️ | Pending |
-| Password reset | ✅ | ⚠️ | Pending |
-| MFA backup codes | ✅ | ⚠️ | Pending |
+| AES-256-GCM encryption | ✅ | ✅ | Complete |
+| Password reset | ✅ | ✅ | Complete |
+| MFA backup codes | ✅ | ✅ | Complete |
 | SMTP email | ✅ | ⚠️ | Pending |
 
 ---

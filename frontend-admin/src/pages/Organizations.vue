@@ -1,21 +1,21 @@
-<template>
+﻿<template>
   <div>
-    <h1 class="text-2xl font-bold mb-6">组织管理</h1>
+    <h1 class="text-2xl font-bold mb-6">缁勭粐绠＄悊</h1>
 
     <div class="flex justify-between items-center mb-4">
-      <input v-model="search" type="text" placeholder="搜索组织..." class="border rounded px-3 py-2 w-64" />
-      <button @click="showCreate = true" class="bg-indigo-600 text-white px-4 py-2 rounded">创建组织</button>
+      <input v-model="search" type="text" placeholder="鎼滅储缁勭粐..." class="border rounded px-3 py-2 w-64" />
+      <button @click="showCreate = true" class="bg-indigo-600 text-white px-4 py-2 rounded">鍒涘缓缁勭粐</button>
     </div>
 
     <table class="w-full bg-white rounded shadow">
       <thead class="bg-gray-50">
         <tr>
           <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">ID</th>
-          <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">名称</th>
-          <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">商户数</th>
-          <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">状态</th>
-          <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">创建时间</th>
-          <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">操作</th>
+          <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">鍚嶇О</th>
+          <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">鍟嗘埛鏁</th>
+          <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">鐘舵€</th>
+          <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">鍒涘缓鏃堕棿</th>
+          <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">鎿嶄綔</th>
         </tr>
       </thead>
       <tbody class="divide-y">
@@ -31,9 +31,9 @@
           </td>
           <td class="px-4 py-3 text-sm text-gray-500">{{ formatDate(org.createdAt) }}</td>
           <td class="px-4 py-3 text-sm">
-            <button @click="viewOrg(org)" class="text-indigo-600 hover:underline mr-3">详情</button>
-            <button v-if="org.status === 'ACTIVE'" @click="suspendOrg(org.id)" class="text-red-600 hover:underline">停用</button>
-            <button v-else @click="activateOrg(org.id)" class="text-green-600 hover:underline">启用</button>
+            <button @click="viewOrg(org)" class="text-indigo-600 hover:underline mr-3">璇︽儏</button>
+            <button v-if="org.status === 'ACTIVE'" @click="suspendOrg(org.id)" class="text-red-600 hover:underline">鍋滅敤</button>
+            <button v-else @click="activateOrg(org.id)" class="text-green-600 hover:underline">鍚敤</button>
           </td>
         </tr>
       </tbody>
@@ -42,11 +42,11 @@
     <!-- Create Modal -->
     <div v-if="showCreate" class="fixed inset-0 bg-black/50 flex items-center justify-center">
       <div class="bg-white rounded-lg p-6 w-96">
-        <h2 class="text-lg font-bold mb-4">创建组织</h2>
-        <input v-model="form.name" type="text" placeholder="组织名称" class="w-full border rounded px-3 py-2 mb-4" />
+        <h2 class="text-lg font-bold mb-4">鍒涘缓缁勭粐</h2>
+        <input v-model="form.name" type="text" placeholder="缁勭粐鍚嶇О" class="w-full border rounded px-3 py-2 mb-4" />
         <div class="flex justify-end gap-3">
-          <button @click="showCreate = false" class="px-4 py-2 text-gray-600">取消</button>
-          <button @click="createOrg" class="px-4 py-2 bg-indigo-600 text-white rounded">创建</button>
+          <button @click="showCreate = false" class="px-4 py-2 text-gray-600">鍙栨秷</button>
+          <button @click="createOrg" class="px-4 py-2 bg-indigo-600 text-white rounded">鍒涘缓</button>
         </div>
       </div>
     </div>
@@ -56,10 +56,10 @@
       <div class="bg-white rounded-lg p-6 w-[700px] max-h-[80vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg font-bold">{{ selectedOrg.name }}</h2>
-          <button @click="selectedOrg = null" class="text-gray-400 hover:text-gray-600">✕</button>
+          <button @click="selectedOrg = null" class="text-gray-400 hover:text-gray-600">鉁</button>
         </div>
 
-        <h3 class="font-bold mb-2">商户列表</h3>
+        <h3 class="font-bold mb-2">鍟嗘埛鍒楄〃</h3>
         <div class="space-y-2 mb-4">
           <div v-for="m in merchants" :key="m.id" class="border rounded p-3 flex justify-between items-center">
             <div>
@@ -68,13 +68,13 @@
                 {{ m.status }}
               </span>
             </div>
-            <button v-if="m.status === 'ACTIVE'" @click="suspendMerchant(m.id)" class="text-red-600 text-sm">停用</button>
-            <button v-else @click="activateMerchant(m.id)" class="text-green-600 text-sm">启用</button>
+            <button v-if="m.status === 'ACTIVE'" @click="suspendMerchant(m.id)" class="text-red-600 text-sm">鍋滅敤</button>
+            <button v-else @click="activateMerchant(m.id)" class="text-green-600 text-sm">鍚敤</button>
           </div>
-          <div v-if="!merchants.length" class="text-gray-400 text-sm">暂无商户</div>
+          <div v-if="!merchants.length" class="text-gray-400 text-sm">鏆傛棤鍟嗘埛</div>
         </div>
 
-        <button @click="showAddMerchant = true" class="text-indigo-600 text-sm">+ 添加商户</button>
+        <button @click="showAddMerchant = true" class="text-indigo-600 text-sm">+ 娣诲姞鍟嗘埛</button>
       </div>
     </div>
   </div>
@@ -82,7 +82,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import api from '../../lib/api'
+import api from '../lib/api'
 
 const search = ref('')
 const organizations = ref([])
@@ -150,3 +150,5 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString('zh-CN')
 }
 </script>
+
+

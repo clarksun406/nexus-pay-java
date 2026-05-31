@@ -1,4 +1,4 @@
-import { TokenResult, ElementChangeEvent, NexuspayError } from '../types';
+﻿import { TokenResult, ElementChangeEvent, NexuspayError } from '../types';
 
 export type ElementEventListener = (event: ElementChangeEvent) => void;
 
@@ -64,10 +64,11 @@ export abstract class Element {
   }
 
   addEventListener(event: string, listener: ElementEventListener): void {
-    this.on(event, listener);
+    this.on(event as any, listener as any);
   }
 
   removeEventListener(event: string, listener: ElementEventListener): void {
     this.off(event, listener);
   }
 }
+
