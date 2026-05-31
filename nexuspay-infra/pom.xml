@@ -20,6 +20,11 @@
             <artifactId>nexuspay-service</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+
         <!-- Stripe SDK -->
         <dependency>
             <groupId>com.stripe</groupId>
