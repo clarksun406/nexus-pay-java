@@ -5,18 +5,25 @@ import com.braintreegateway.Environment;
 import com.braintreegateway.Result;
 import com.braintreegateway.Transaction;
 import com.braintreegateway.TransactionRequest;
+import com.nexuspay.common.util.AesGcmEncryptionService;
 import com.nexuspay.domain.entity.PaymentIntent;
 import com.nexuspay.domain.entity.ProviderAccount;
+import com.nexuspay.domain.entity.Refund;
 import com.nexuspay.service.PaymentIntentService;
 import com.nexuspay.service.provider.PaymentProvider;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class BraintreeProvider implements PaymentProvider {
+
+    private final AesGcmEncryptionService encryptionService;
 
     @Override
     public ProviderAccount.Provider supportedProvider() {
@@ -84,13 +91,79 @@ public class BraintreeProvider implements PaymentProvider {
         }
     }
 
+    @Override
+    public RefundResult refund(String providerPaymentId, BigInteger amount, String currency,
+                               Refund.RefundReason reason, ProviderAccount account) {
+        try {
+            BraintreeGateway gateway = createGateway(account);
+            Result<Transaction> result = gateway.transaction().refund(
+                    providerPaymentId,
+                    new BigDecimal(amount).divide(new BigDecimal("100"))
+            );
+
+            if (result.isSuccess()) {
+                Transaction refund = result.getTarget();
+                return new RefundResult(
+                        true,
+                        refund.getId(),
+                        "{\"status\": \"" + refund.getStatus() + "\"}",
+                        null,
+                        null
+                );
+            }
+
+            return new RefundResult(false, null, null, "BRAINTREE_REFUND_ERROR", result.getMessage());
+        } catch (Exception e) {
+            log.error("Braintree refund failed: {}", e.getMessage(), e);
+            return new RefundResult(false, null, null, "BRAINTREE_REFUND_ERROR", e.getMessage());
+        }
+    }
+
+    @Override
+    public ProviderPaymentStatus fetchPaymentStatus(String providerPaymentId, ProviderAccount account) {
+        try {
+            BraintreeGateway gateway = createGateway(account);
+            Transaction transaction = gateway.transaction().find(providerPaymentId);
+            return new ProviderPaymentStatus(
+                    transaction.getId(),
+                    toPaymentStatus(transaction.getStatus()),
+                    transaction.getAmount() != null
+                            ? transaction.getAmount().movePointRight(2).toBigInteger()
+                            : null,
+                    transaction.getCurrencyIsoCode(),
+                    "{\"status\": \"" + transaction.getStatus() + "\"}"
+            );
+        } catch (Exception e) {
+            log.error("Braintree status fetch failed: {}", e.getMessage(), e);
+            return new ProviderPaymentStatus(providerPaymentId, PaymentIntent.PaymentStatus.FAILED, null, null,
+                    "{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
     private BraintreeGateway createGateway(ProviderAccount account) {
-        // TODO(ACL): Parse and decrypt credentials from account safely
         return new BraintreeGateway(
-                Environment.SANDBOX,
-                "merchant_id",
-                "public_key",
-                "private_key"
+                account.getMode() == ProviderAccount.Mode.LIVE ? Environment.PRODUCTION : Environment.SANDBOX,
+                account.getConnectorAccountId(),
+                encryptionService.decrypt(account.getEncryptedPublishableKey()),
+                encryptionService.decrypt(account.getEncryptedSecretKey())
         );
+    }
+
+    private PaymentIntent.PaymentStatus toPaymentStatus(Transaction.Status status) {
+        if (status == Transaction.Status.SETTLED || status == Transaction.Status.SETTLING
+                || status == Transaction.Status.SUBMITTED_FOR_SETTLEMENT) {
+            return PaymentIntent.PaymentStatus.SUCCEEDED;
+        }
+        if (status == Transaction.Status.AUTHORIZED) {
+            return PaymentIntent.PaymentStatus.REQUIRES_CAPTURE;
+        }
+        if (status == Transaction.Status.VOIDED) {
+            return PaymentIntent.PaymentStatus.CANCELED;
+        }
+        if (status == Transaction.Status.PROCESSOR_DECLINED || status == Transaction.Status.GATEWAY_REJECTED
+                || status == Transaction.Status.FAILED) {
+            return PaymentIntent.PaymentStatus.FAILED;
+        }
+        return PaymentIntent.PaymentStatus.PROCESSING;
     }
 }

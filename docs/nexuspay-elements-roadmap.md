@@ -1,277 +1,88 @@
-﻿# NexusPay Elements SDK 瀹炵幇鐘舵€佷笌璺嚎鍥?
-## 椤圭洰姒傝堪
-
-NexusPay Elements SDK 鏄竴涓被浼?Stripe Elements 鐨勫墠绔敮浠樼粍浠跺簱锛屾敮鎸侀摱琛屽崱銆丄PM 鍜岃闃呭姛鑳姐€傛湰鏂囨。璁板綍宸插疄鐜般€佹湭瀹炵幇鐨勫姛鑳藉強鍚庣画璺嚎鍥俱€?
----
-
-## 涓€銆佸凡瀹炵幇鍔熻兘
-
-### 1.1 鍓嶇 SDK (frontend-nexuspay-js)
-
-| 妯″潡 | 鍔熻兘 | 鏂囦欢 | 鐘舵€?|
-|------|------|------|------|
-| **鏍稿績鏋舵瀯** |
-| 鍏ュ彛绫?| Nexuspay 涓荤被锛屽垵濮嬪寲 SDK | `core/Nexuspay.ts` | 鉁?|
-| 瀹瑰櫒绫?| Elements 瀹瑰櫒锛屽垱寤?Element | `core/Elements.ts` | 鉁?|
-| 鍩虹被 | Element 鎶借薄绫伙紝浜嬩欢绯荤粺 | `core/Element.ts` | 鉁?|
-| 绫诲瀷瀹氫箟 | TypeScript 绫诲瀷 | `types.ts` | 鉁?|
-| iframe 閫氫俊 | postMessage 宸ュ叿 | `utils/postMessage.ts` | 鉁?|
-| **Element 绫诲瀷** |
-| Card Element | 閾惰鍗℃敮浠?| `elements/CardElement.ts` | 鉁?|
-| Payment Element | 缁熶竴鏀粯缁勪欢 | `elements/PaymentElement.ts` | 鈿狅笍 妗嗘灦 |
-| Setup Element | 淇濆瓨鍗＄墖 | `elements/SetupElement.ts` | 鉁?|
-| Apple Pay Element | Apple Pay | `elements/ApplePayElement.ts` | 鉁?|
-| Google Pay Element | Google Pay | `elements/GooglePayElement.ts` | 鉁?|
-| Alipay Element | 鏀粯瀹?| `elements/AlipayElement.ts` | 鉁?|
-| WeChatPay Element | 寰俊鏀粯 | `elements/WeChatPayElement.ts` | 鉁?|
-| **鏋勫缓閰嶇疆** |
-| TypeScript | 绫诲瀷绯荤粺 | `tsconfig.json` | 鉁?|
-| Vite | 鏋勫缓宸ュ叿 | `vite.config.ts` | 鉁?|
-| Package | npm 鍖呴厤缃?| `package.json` | 鉁?|
-
-### 1.2 iframe 椤甸潰 (frontend-dashboard/elements)
-
-| 椤甸潰 | 鍔熻兘 | 鐘舵€?|
-|------|------|------|
-| `card.html` | 鍗＄墖杈撳叆 UI锛堝崱鍙?鏈夋晥鏈?CVC锛?| 鉁?|
-| `card.js` | Luhn 鏍￠獙銆佹牸寮忓寲銆佸搧鐗岃瘑鍒€乸ostMessage | 鉁?|
-| `payment.html` | Payment Element iframe锛坱abs/accordion 甯冨眬锛?| 鈿狅笍 鍩虹 |
-| `demo.html` | 瀹屾暣婕旂ず椤甸潰 | 鉁?|
-
-### 1.3 鍚庣 - 璁㈤槄妯″潡
-
-| 灞傜骇 | 鏂囦欢 | 鍔熻兘 | 鐘舵€?|
-|------|------|------|------|
-| **瀹炰綋** |
-| `Customer.java` | 瀹㈡埛瀹炰綋 | 鉁?|
-| `PaymentMethod.java` | 鏀粯鏂瑰紡瀹炰綋 | 鉁?|
-| `Subscription.java` | 璁㈤槄瀹炰綋 | 鉁?|
-| **Repository** |
-| `CustomerRepository.java` | 瀹㈡埛 CRUD | 鉁?|
-| `PaymentMethodRepository.java` | 鏀粯鏂瑰紡 CRUD | 鉁?|
-| `SubscriptionRepository.java` | 璁㈤槄 CRUD | 鉁?|
-| **Service** |
-| `CustomerService.java` | 瀹㈡埛绠＄悊銆佹敮浠樻柟寮忕鐞?| 鉁?|
-| `SubscriptionService.java` | 璁㈤槄鍒涘缓銆佹縺娲汇€佸彇娑?| 鉁?|
-| **Controller** |
-| `CustomerController.java` | `/api/v1/merchants/{id}/customers` | 鉁?|
-| `SubscriptionController.java` | `/api/v1/merchants/{id}/subscriptions` | 鉁?|
-| **鏁版嵁搴?* |
-| `V5__create_subscription_tables.sql` | customers, payment_methods, subscriptions 琛?| 鉁?|
-
-### 1.4 鍚庣 - 杩愯惀绠＄悊妯″潡
-
-| 灞傜骇 | 鏂囦欢 | 鍔熻兘 | 鐘舵€?|
-|------|------|------|------|
-| **Service** |
-| `OrganizationService.java` | 缁勭粐绠＄悊銆佸晢鎴风鐞嗐€佹垚鍛樼鐞?| 鉁?|
-| **Controller** |
-| `AdminController.java` | 鍏ㄥ眬姒傝銆佺洃鎺с€佸鏍?API | 鉁?|
-| `OrganizationController.java` | 缁勭粐 CRUD API | 鉁?|
-
-### 1.5 鍓嶇 - 鍟嗘埛鍚庡彴
-
-| 椤甸潰 | 鏂囦欢 | 鍔熻兘 | 鐘舵€?|
-|------|------|------|------|
-| 瀹㈡埛绠＄悊 | `pages/Customers.vue` | 瀹㈡埛鍒楄〃銆佽鎯呫€佹敮浠樻柟寮忕鐞?| 鉁?|
-| 璁㈤槄绠＄悊 | `pages/Subscriptions.vue` | 璁㈤槄鍒楄〃銆佸垱寤恒€佸彇娑堛€佺粺璁?| 鉁?|
-
-### 1.6 鍓嶇 - 杩愯惀绠＄悊绔?
-| 椤甸潰 | 鏂囦欢 | 鍔熻兘 | 鐘舵€?|
-|------|------|------|------|
-| 甯冨眬 | `pages/admin/AdminLayout.vue` | 渚ц竟鏍忓鑸?| 鉁?|
-| 姒傝 | `pages/admin/AdminOverview.vue` | 鍏ㄥ眬缁熻銆佸緟瀹℃牳銆丳rovider 鐘舵€?| 鉁?|
-| 缁勭粐绠＄悊 | `pages/admin/Organizations.vue` | 缁勭粐 CRUD銆佸晢鎴风鐞?| 鉁?|
-
----
-
-## 浜屻€佹湭瀹炵幇鍔熻兘
-
-### 2.1 Element SDK 缂哄け鍔熻兘
-
-| 鍔熻兘 | 浼樺厛绾?| 璇存槑 |
-|------|--------|------|
-| **Payment Element 鍔ㄦ€佹覆鏌?* | 馃敶 楂?| 鏍规嵁鏀粯鏂瑰紡鍔ㄦ€佹覆鏌撻€夐」鍗★紝褰撳墠浠呮湁妗嗘灦 |
-| **3DS 鑷姩澶勭悊** | 馃敶 楂?| 鑷姩寮瑰嚭 3DS 璁よ瘉 iframe锛屽綋鍓嶉渶鎵嬪姩澶勭悊 |
-| **鏍峰紡娣卞害瀹氬埗** | 馃煛 涓?| CSS 鍙橀噺绾у埆瀹氬埗锛屽綋鍓嶄粎鏀寔鍩虹 style |
-| **React 缁勪欢灏佽** | 馃煛 涓?| `@nexuspay/react-elements` 鍖?|
-| **Vue 缁勪欢灏佽** | 馃煛 涓?| `@nexuspay/vue-elements` 鍖?|
-| **琛ㄥ崟楠岃瘉澧炲己** | 馃煝 浣?| 瀹炴椂璇︾粏閿欒鎻愮ず銆丅IN 妫€娴嬪寮?|
-| **鍦板潃鑷姩瀹屾垚** | 馃煝 浣?| 闆嗘垚鍦板潃 API |
-| **绉诲姩绔紭鍖?* | 馃煝 浣?| 瑙︽帶浼樺寲銆佸搷搴斿紡澧炲己 |
-| **iDEAL/Bancontact 绛?APM** | 馃煝 浣?| 娆ф床鏈湴鏀粯鏂瑰紡 |
-| **Link 鏀粯** | 馃煝 浣?| Stripe Link 绫讳技鐨勪繚瀛樺崱鐗囧姛鑳?|
-
-### 2.2 鍚庣缂哄け鍔熻兘
-
-| 鍔熻兘 | 浼樺厛绾?| 璇存槑 |
-|------|--------|------|
-| **瀹氭椂鎵ｆ浠诲姟** | 馃敶 楂?| 璁㈤槄鑷姩缁垂 Scheduler |
-| **Invoice 瀹炰綋** | 馃煛 涓?| 璁㈤槄璐﹀崟璁板綍 |
-| **Webhook 閫氱煡澧炲己** | 馃煛 涓?| 璁㈤槄浜嬩欢閫氱煡 |
-| **鏁版嵁瀵煎嚭** | 馃煝 浣?| CSV/Excel 鎶ヨ〃瀵煎嚭 |
-| **鎿嶄綔鏃ュ織** | 馃煝 浣?| 瀹¤鏃ュ織璁板綍 |
-
-### 2.3 鍓嶇缂哄け鍔熻兘
-
-| 鍔熻兘 | 浼樺厛绾?| 璇存槑 |
-|------|--------|------|
-| **鍟嗘埛鍚庡彴 - 閫€娆鹃〉闈㈠畬鍠?* | 馃煛 涓?| 褰撳墠浠呮湁楠ㄦ灦 |
-| **鍟嗘埛鍚庡彴 - Webhook 閰嶇疆** | 馃煛 涓?| 褰撳墠浠呮湁楠ㄦ灦 |
-| **杩愯惀绠＄悊绔?- 鍟嗘埛绠＄悊椤甸潰** | 馃煛 涓?| 鐙珛鍟嗘埛鍒楄〃椤甸潰 |
-| **杩愯惀绠＄悊绔?- 鐩戞帶椤甸潰** | 馃煛 涓?| 璇︾粏鐩戞帶鍥捐〃 |
-| **杩愯惀绠＄悊绔?- 鏀粯鏂瑰紡閰嶇疆椤甸潰** | 馃煛 涓?| 鍏ㄥ眬鏀粯鏂瑰紡寮€鍏?|
-| **璺敱閰嶇疆** | 馃敶 楂?| 闇€瑕佹坊鍔犲埌 router/index.ts |
-
-### 2.4 杩愯惀绠＄悊绔己澶卞姛鑳?
-| 鍔熻兘 | 浼樺厛绾?| 璇存槑 |
-|------|--------|------|
-| **鏉冮檺鎺у埗** | 馃敶 楂?| RBAC 鏉冮檺妫€鏌?|
-| **鏁版嵁鎶ヨ〃** | 馃煛 涓?| 鍥捐〃鍙鍖?|
-| **鎿嶄綔瀹¤** | 馃煛 涓?| 鎿嶄綔鏃ュ織椤甸潰 |
-| **绯荤粺閰嶇疆** | 馃煝 浣?| 鍏ㄥ眬閰嶇疆绠＄悊 |
-
----
-
-## 涓夈€佽矾绾垮浘
-
-### Phase 1: 鏍稿績瀹屽杽 (v1.1.0)
-
-**鐩爣锛氳ˉ榻愭牳蹇冨姛鑳界己鍙?*
-
-**Element SDK锛?*
-- [ ] Payment Element 鍔ㄦ€?UI 瀹屽杽
-- [ ] 3DS 鑷姩澶勭悊娴佺▼
-- [ ] 鏍峰紡瀹氬埗澧炲己锛圕SS 鍙橀噺锛?
-**鍚庣锛?*
-- [ ] 璁㈤槄瀹氭椂鎵ｆ浠诲姟
-- [ ] Invoice 瀹炰綋鍜?API
-
-**鍓嶇锛?*
-- [ ] 璺敱閰嶇疆锛堟坊鍔犳柊椤甸潰鍒拌矾鐢憋級
-- [ ] 鍟嗘埛鍚庡彴閫€娆鹃〉闈㈠畬鍠?- [ ] 鍟嗘埛鍚庡彴 Webhook 閰嶇疆瀹屽杽
-
-**棰勮瀹屾垚锛? 鍛?*
-
----
-
-### Phase 2: 妗嗘灦缁勪欢 (v1.2.0)
-
-**鐩爣锛氭彁鍗囧紑鍙戣€呬綋楠?*
-
-**Element SDK锛?*
-- [ ] React 缁勪欢灏佽 (`@nexuspay/react-elements`)
-- [ ] Vue 缁勪欢灏佽 (`@nexuspay/vue-elements`)
-- [ ] npm 鍙戝竷鍜?CDN 閮ㄧ讲
-
-**鍚庣锛?*
-- [ ] Invoice API 瀹屽杽
-- [ ] 璁㈤槄 Webhook 浜嬩欢
-
-**棰勮瀹屾垚锛? 鍛?*
-
----
-
-### Phase 3: 鐩戞帶涓庤繍钀?(v1.3.0)
-
-**鐩爣锛氬畬鍠勮繍钀ヨ兘鍔?*
-
-**杩愯惀绠＄悊绔細**
-- [ ] 鍟嗘埛绠＄悊鐙珛椤甸潰
-- [ ] 绯荤粺鐩戞帶椤甸潰锛堝浘琛級
-- [ ] 鏀粯鏂瑰紡閰嶇疆椤甸潰
-- [ ] 鏁版嵁鎶ヨ〃瀵煎嚭
-
-**鍚庣锛?*
-- [ ] 鎿嶄綔瀹¤鏃ュ織
-- [ ] 缁熻鎶ヨ〃 API
-
-**棰勮瀹屾垚锛? 鍛?*
-
----
-
-### Phase 4: 楂樼骇鍔熻兘 (v2.0.0)
-
-**鐩爣锛氫紒涓氱骇鑳藉姏**
-
-**Element SDK锛?*
-- [ ] 鍦板潃鑷姩瀹屾垚
-- [ ] Link 鏀粯
-- [ ] iDEAL/Bancontact 绛?APM
-- [ ] 绉诲姩绔紭鍖?
-**鍚庣锛?*
-- [ ] 澶氱鎴锋暟鎹殧绂?- [ ] 楂樺彲鐢ㄦ灦鏋?
-**杩愯惀绠＄悊绔細**
-- [ ] 澶氱淮搴︽暟鎹垎鏋?- [ ] 鑷畾涔夋姤琛?
-**棰勮瀹屾垚锛? 鍛?*
-
----
-
-## 鍥涖€侀噷绋嬬鏃堕棿绾?
-```
-v1.0.0 鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣 2026-05-31 鉁?        SDK 鏍稿績鏋舵瀯銆? 绉?Element銆佽闃呮ā鍧椼€佽繍钀ョ鐞嗙鍩虹
-
-v1.1.0 鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣 2026-06-14 馃幆
-        Payment Element 瀹屽杽銆?DS 鑷姩澶勭悊銆佸畾鏃舵墸娆?
-v1.2.0 鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣 2026-06-28 馃搵
-        React/Vue 缁勪欢灏佽銆乶pm 鍙戝竷
-
-v1.3.0 鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣 2026-07-12 馃搵
-        鐩戞帶瀹屽杽銆佹姤琛ㄥ鍑恒€佸璁℃棩蹇?
-v2.0.0 鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣鈹佲攣 2026-08-09 馃搵
-        浼佷笟绾у姛鑳姐€佹洿澶?APM銆侀珮鍙敤
-```
-
----
-
-## 浜斻€佷紭鍏堢骇鐭╅樀
-
-```
-                    楂樹环鍊?                      鈹?                      鈹? 鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                      鈹? 鈹?Payment Element 鈹?                      鈹? 鈹?鍔ㄦ€?UI         鈹?                      鈹? 鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                      鈹? 鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?         鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹尖攢鈹€鈹?3DS 鑷姩澶勭悊    鈹?         鈹?           鈹? 鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?         鈹?           鈹? 鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?         鈹?  React    鈹? 鈹?璁㈤槄瀹氭椂鎵ｆ    鈹?         鈹?  缁勪欢     鈹? 鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?         鈹?           鈹?浣庢姇鍏?鈹€鈹€鈹尖攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹尖攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ 楂樻姇鍏?         鈹?           鈹?         鈹?           鈹? 鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?         鈹?  鏍峰紡     鈹? 鈹?鐩戞帶鍥捐〃        鈹?         鈹?  瀹氬埗     鈹? 鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?         鈹?           鈹? 鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?         鈹?           鈹? 鈹?鏁版嵁鎶ヨ〃        鈹?         鈹?           鈹? 鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                      鈹?                      鈹?                    浣庝环鍊?```
-
----
-
-## 鍏€佹妧鏈€哄姟
-
-| 椤圭洰 | 璇存槑 | 褰卞搷 |
-|------|------|------|
-| 璺敱閰嶇疆缂哄け | 鏂伴〉闈㈡湭娣诲姞鍒?router | 椤甸潰鏃犳硶璁块棶 |
-| Provider 鐩戞帶鏁版嵁 | AdminController 杩斿洖 mock 鏁版嵁 | 闇€瑕佸鎺ョ湡瀹炴暟鎹?|
-| 閿欒澶勭悊 | Element SDK 閿欒澶勭悊涓嶅瀹屽杽 | 鐢ㄦ埛浣撻獙 |
-| 鍗曞厓娴嬭瘯 | 娴嬭瘯瑕嗙洊涓嶈冻 | 浠ｇ爜璐ㄩ噺 |
-| 鏂囨。 | API 鏂囨。銆侀泦鎴愭枃妗ｇ己澶?| 寮€鍙戣€呬綋楠?|
-
----
-
-## 涓冦€佷緷璧栧叧绯?
-```
-璺敱閰嶇疆 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                          鈹?                          鈻?Payment Element 鈼勨攢鈹€鈹€鈹€鈹€鈹€鈹€ 3DS 澶勭悊
-                          鈹?                          鈹?璁㈤槄瀹氭椂鎵ｆ 鈼勨攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                          鈹?                          鈻?React/Vue 缁勪欢 鈼勨攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ npm 鍙戝竷
-```
-
----
-
-## 鍏€侀闄╄瘎浼?
-| 椋庨櫓 | 姒傜巼 | 褰卞搷 | 缂撹В鎺柦 |
-|------|------|------|----------|
-| 3DS 鍏煎鎬ч棶棰?| 涓?| 楂?| 鍏呭垎娴嬭瘯鍚勯摱琛?3DS 娴佺▼ |
-| Provider API 鍙樻洿 | 浣?| 楂?| 鎶借薄灞傞殧绂伙紝鐗堟湰閿佸畾 |
-| 鎬ц兘闂 | 浣?| 涓?| 鍘嬪姏娴嬭瘯锛岀紦瀛樼瓥鐣?|
-| 瀹夊叏婕忔礊 | 浣?| 楂?| 瀹夊叏瀹¤锛屾笚閫忔祴璇?|
-
----
-
-## 涔濄€佷笅涓€姝ヨ鍔?
-### 绔嬪嵆琛屽姩锛堟湰鍛級
-
-1. **娣诲姞璺敱閰嶇疆** - 浣挎柊椤甸潰鍙闂?2. **瀹屽杽 Payment Element iframe** - 鍔ㄦ€佹敮浠樻柟寮忓垏鎹?3. **瀹炵幇 3DS 鑷姩澶勭悊** - 鏍稿績鍚堣瑕佹眰
-
-### 鐭湡琛屽姩锛?鍛ㄥ唴锛?
-4. **瀹炵幇璁㈤槄瀹氭椂鎵ｆ** - 鏍稿績璁㈤槄鍔熻兘
-5. **React 缁勪欢灏佽** - 寮€鍙戣€呬綋楠?6. **瀵规帴鐪熷疄鐩戞帶鏁版嵁** - 杩愯惀鑳藉姏
-
-### 涓湡琛屽姩锛?鏈堝唴锛?
-7. **Vue 缁勪欢灏佽**
-8. **鏁版嵁鎶ヨ〃瀵煎嚭**
-9. **瀹¤鏃ュ織**
-
+# NexusPay Elements And Billing Roadmap
+
+Last updated: 2026-06-04
+
+This document tracks the frontend Elements SDK, subscription/billing module, and adjacent admin/dashboard work.
+
+## Implemented Foundations
+
+Elements SDK:
+- TypeScript SDK package in `frontend-nexuspay-js`.
+- Core SDK, Elements container, base Element abstraction, and postMessage utilities.
+- Card Element, Setup Element, Apple Pay Element, Google Pay Element, Alipay Element, and WeChatPay Element foundations.
+- Payment Element skeleton.
+- Demo iframe pages under `frontend-dashboard/elements`.
+
+Billing backend:
+- Customer, PaymentMethod, and Subscription entities.
+- Customer and subscription repositories/services/controllers.
+- Subscription creation, activation, cancellation, and minimal renewal processing.
+- Subscription period rollover for month and year intervals.
+
+Dashboard/admin:
+- Merchant dashboard pages for customers and subscriptions exist.
+- Admin overview and organization foundations exist.
+- Admin overview and monitoring APIs now use repository/provider-backed data instead of mock-only responses.
+
+## Remaining Gaps
+
+High priority:
+- Validate all billing and Elements-related backend code with JDK 17.
+- Align dashboard customer/subscription API clients and routes with backend endpoints.
+- Complete Payment Element dynamic rendering instead of the current skeleton behavior.
+- Add automatic 3DS/SCA handoff in the Payment Element.
+- Add invoice entity, migrations, API, and subscription invoice events.
+- Add tests for subscription renewal success/failure flows.
+
+Medium priority:
+- Add subscription webhook events for renewal, cancellation, payment failure, and invoice status changes.
+- Complete merchant dashboard refunds and webhook endpoint pages.
+- Add React and Vue Elements wrappers.
+- Publish npm/CDN artifacts.
+- Add deeper style customization through stable CSS variables.
+
+Lower priority:
+- Improve form validation, BIN metadata, and error messages.
+- Add address autocomplete.
+- Improve mobile touch behavior.
+- Add additional APMs such as iDEAL and Bancontact.
+
+## Roadmap
+
+### Phase 1 - Stabilize Billing And Payment Element
+
+- Run Java 17 compile and tests.
+- Fix any provider SDK or subscription compile issues.
+- Add focused tests for subscription renewals.
+- Complete dashboard route/API alignment for customers and subscriptions.
+- Complete Payment Element dynamic payment method rendering.
+- Add 3DS/SCA iframe handoff.
+
+### Phase 2 - Invoice And Webhook Support
+
+- Add invoice tables and domain entity.
+- Add invoice APIs and dashboard views.
+- Emit subscription and invoice webhook events through the outbox.
+- Add failed-renewal retry and dunning hooks.
+
+### Phase 3 - Framework Wrappers
+
+- Add `@nexuspay/react-elements`.
+- Add `@nexuspay/vue-elements`.
+- Publish npm package artifacts.
+- Add CDN bundle and integration examples.
+
+### Phase 4 - UX And Payment Method Expansion
+
+- Add stronger validation and input diagnostics.
+- Add address autocomplete.
+- Add more APMs.
+- Improve mobile and accessibility behavior.
+
+## Technical Debt
+
+- Payment Element remains a skeleton and needs real dynamic rendering.
+- Invoice support is not implemented yet.
+- Frontend route/API alignment needs another pass.
+- Elements package needs publishable artifacts and wrapper packages.
+- Backend verification is blocked until JDK 17 is configured.

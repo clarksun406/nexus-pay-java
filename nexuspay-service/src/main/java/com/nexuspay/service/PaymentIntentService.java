@@ -2,10 +2,8 @@ package com.nexuspay.service;
 
 import com.nexuspay.common.exception.BusinessException;
 import com.nexuspay.domain.entity.PaymentIntent;
-import com.nexuspay.domain.entity.PaymentRequest;
 import com.nexuspay.domain.entity.ProviderAccount;
 import com.nexuspay.repository.PaymentIntentRepository;
-import com.nexuspay.repository.ProviderAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,9 +18,9 @@ import java.util.UUID;
 public class PaymentIntentService {
     
     private final PaymentIntentRepository paymentIntentRepository;
-    private final ProviderAccountRepository providerAccountRepository;
     private final RoutingEngine routingEngine;
     private final ProviderDispatcher providerDispatcher;
+    private final OutboxService outboxService;
     
     @Transactional
     public PaymentIntent create(UUID merchantId, CreateRequest req) {
@@ -45,7 +43,9 @@ public class PaymentIntentService {
         intent.setSuccessUrl(req.successUrl());
         intent.setCancelUrl(req.cancelUrl());
         
-        return paymentIntentRepository.save(intent);
+        PaymentIntent saved = paymentIntentRepository.save(intent);
+        publishIfTerminal(saved);
+        return saved;
     }
     
     @Transactional
@@ -70,7 +70,7 @@ public class PaymentIntentService {
         }
         
         ProviderAccount account = routing.primary();
-        intent.setResolvedProvider(account.getProvider());
+        intent.setResolvedProvider(toPaymentProvider(account.getProvider()));
         intent.setConnectorAccountId(account.getId());
         intent.setPaymentMethodType(req.paymentMethodType());
         intent.setStatus(PaymentIntent.PaymentStatus.PROCESSING);
@@ -88,7 +88,9 @@ public class PaymentIntentService {
             intent.setStatus(PaymentIntent.PaymentStatus.FAILED);
         }
         
-        return paymentIntentRepository.save(intent);
+        PaymentIntent saved = paymentIntentRepository.save(intent);
+        publishIfTerminal(saved);
+        return saved;
     }
     
     @Transactional
@@ -99,7 +101,7 @@ public class PaymentIntentService {
             throw new BusinessException("Invalid payment status for capture", HttpStatus.BAD_REQUEST);
         }
         
-        boolean success = providerDispatcher.capture(intent.getResolvedProvider(), 
+        boolean success = providerDispatcher.capture(toAccountProvider(intent.getResolvedProvider()),
                 intent.getProviderPaymentId(), intent.getConnectorAccountId());
         
         if (success) {
@@ -108,7 +110,9 @@ public class PaymentIntentService {
             intent.setStatus(PaymentIntent.PaymentStatus.FAILED);
         }
         
-        return paymentIntentRepository.save(intent);
+        PaymentIntent saved = paymentIntentRepository.save(intent);
+        publishIfTerminal(saved);
+        return saved;
     }
     
     @Transactional
@@ -120,7 +124,7 @@ public class PaymentIntentService {
         }
         
         if (intent.getProviderPaymentId() != null) {
-            providerDispatcher.cancel(intent.getResolvedProvider(), 
+            providerDispatcher.cancel(toAccountProvider(intent.getResolvedProvider()),
                     intent.getProviderPaymentId(), intent.getConnectorAccountId());
         }
         
@@ -152,4 +156,22 @@ public class PaymentIntentService {
     
     public record ChargeResult(boolean success, String providerPaymentId, String providerResponse,
                               String failureCode, String failureMessage) {}
+
+    private PaymentIntent.Provider toPaymentProvider(ProviderAccount.Provider provider) {
+        return PaymentIntent.Provider.valueOf(provider.name());
+    }
+
+    private ProviderAccount.Provider toAccountProvider(PaymentIntent.Provider provider) {
+        return ProviderAccount.Provider.valueOf(provider.name());
+    }
+
+    private void publishIfTerminal(PaymentIntent intent) {
+        if (intent.getStatus() == PaymentIntent.PaymentStatus.SUCCEEDED
+                || intent.getStatus() == PaymentIntent.PaymentStatus.FAILED
+                || intent.getStatus() == PaymentIntent.PaymentStatus.CANCELED
+                || intent.getStatus() == PaymentIntent.PaymentStatus.REQUIRES_CAPTURE
+                || intent.getStatus() == PaymentIntent.PaymentStatus.REQUIRES_ACTION) {
+            outboxService.createPaymentEvent(intent, "payment_intent." + intent.getStatus().name().toLowerCase());
+        }
+    }
 }

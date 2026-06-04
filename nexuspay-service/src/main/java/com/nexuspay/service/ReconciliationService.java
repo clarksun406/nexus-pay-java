@@ -2,6 +2,7 @@ package com.nexuspay.service;
 
 import com.nexuspay.common.exception.BusinessException;
 import com.nexuspay.domain.entity.PaymentIntent;
+import com.nexuspay.domain.entity.ProviderAccount;
 import com.nexuspay.repository.PaymentIntentRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.*;
 public class ReconciliationService {
     
     private final PaymentIntentRepository paymentIntentRepository;
+    private final ProviderDispatcher providerDispatcher;
     
     @Data
     public static class ReconciliationReport {
@@ -68,17 +70,40 @@ public class ReconciliationService {
     }
     
     private Discrepancy checkDiscrepancy(PaymentIntent intent) {
-        // In production, fetch actual state from provider API and compare
-        // For now, return null (no discrepancy)
-        
-        if (intent.getProviderPaymentId() == null) {
+        if (intent.getProviderPaymentId() == null || intent.getResolvedProvider() == null
+                || intent.getConnectorAccountId() == null) {
             return null;
         }
-        
-        // Mock: check if provider payment exists
-        // Real implementation would call provider API
-        
-        return null;
+
+        var actual = providerDispatcher.fetchPaymentStatus(
+                ProviderAccount.Provider.valueOf(intent.getResolvedProvider().name()),
+                intent.getProviderPaymentId(),
+                intent.getConnectorAccountId()
+        );
+
+        if (actual == null) {
+            return null;
+        }
+
+        boolean statusMatches = actual.status() == intent.getStatus();
+        boolean amountMatches = actual.amount() == null || actual.amount().equals(intent.getAmount());
+        boolean currencyMatches = actual.currency() == null
+                || actual.currency().equalsIgnoreCase(intent.getCurrency());
+
+        if (statusMatches && amountMatches && currencyMatches) {
+            return null;
+        }
+
+        Discrepancy discrepancy = new Discrepancy();
+        discrepancy.setPaymentIntentId(intent.getId());
+        discrepancy.setProviderPaymentId(intent.getProviderPaymentId());
+        discrepancy.setExpectedAmount(intent.getAmount());
+        discrepancy.setActualAmount(actual.amount());
+        discrepancy.setExpectedStatus(intent.getStatus().name());
+        discrepancy.setActualStatus(actual.status() != null ? actual.status().name() : null);
+        discrepancy.setReason("Local payment intent does not match provider state");
+        discrepancy.setDetectedAt(Instant.now());
+        return discrepancy;
     }
     
     @Transactional
@@ -92,7 +117,6 @@ public class ReconciliationService {
     }
     
     public List<Discrepancy> getOpenDiscrepancies(UUID merchantId) {
-        // In production, query from a discrepancies table
-        return Collections.emptyList();
+        return runReconciliation(merchantId, Instant.now().minusSeconds(86400), Instant.now()).getDiscrepancies();
     }
 }

@@ -3,6 +3,7 @@ package com.nexuspay.service;
 import com.nexuspay.common.exception.BusinessException;
 import com.nexuspay.domain.entity.PaymentIntent;
 import com.nexuspay.domain.entity.ProviderAccount;
+import com.nexuspay.domain.entity.Refund;
 import com.nexuspay.repository.ProviderAccountRepository;
 import com.nexuspay.service.provider.PaymentProvider;
 import jakarta.annotation.PostConstruct;
@@ -14,6 +15,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.math.BigInteger;
 
 @Service
 @RequiredArgsConstructor
@@ -58,5 +60,41 @@ public class ProviderDispatcher {
 
         PaymentProvider paymentProvider = providers.get(provider);
         return paymentProvider != null && paymentProvider.cancel(providerPaymentId, account);
+    }
+
+    public PaymentProvider.RefundResult refund(ProviderAccount.Provider provider, String providerPaymentId,
+                                               BigInteger amount, String currency, Refund.RefundReason reason,
+                                               UUID accountId) {
+        ProviderAccount account = providerAccountRepository.findById(accountId)
+                .orElseThrow(() -> new BusinessException("Provider account not found", HttpStatus.NOT_FOUND));
+
+        PaymentProvider paymentProvider = providers.get(provider);
+        if (paymentProvider == null) {
+            throw new BusinessException("Unsupported provider: " + provider, HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            return paymentProvider.refund(providerPaymentId, amount, currency, reason, account);
+        } catch (UnsupportedOperationException e) {
+            throw new BusinessException(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    public PaymentProvider.ProviderPaymentStatus fetchPaymentStatus(ProviderAccount.Provider provider,
+                                                                    String providerPaymentId,
+                                                                    UUID accountId) {
+        ProviderAccount account = providerAccountRepository.findById(accountId)
+                .orElseThrow(() -> new BusinessException("Provider account not found", HttpStatus.NOT_FOUND));
+
+        PaymentProvider paymentProvider = providers.get(provider);
+        if (paymentProvider == null) {
+            throw new BusinessException("Unsupported provider: " + provider, HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            return paymentProvider.fetchPaymentStatus(providerPaymentId, account);
+        } catch (UnsupportedOperationException e) {
+            throw new BusinessException(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 }

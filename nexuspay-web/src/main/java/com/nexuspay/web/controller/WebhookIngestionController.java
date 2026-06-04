@@ -1,5 +1,6 @@
 package com.nexuspay.web.controller;
 
+import com.nexuspay.service.ProviderWebhookService;
 import com.nexuspay.service.provider.ProviderWebhookAclPort;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 public class WebhookIngestionController {
 
     private final ProviderWebhookAclPort providerWebhookAclPort;
+    private final ProviderWebhookService providerWebhookService;
 
     @PostMapping("/stripe")
     public ResponseEntity<?> stripeWebhook(
@@ -24,7 +26,8 @@ public class WebhookIngestionController {
             return ResponseEntity.badRequest().body("Invalid Stripe signature");
         }
 
-        log.info("Received Stripe webhook (verified)");
+        providerWebhookService.handleStripe(payload);
+        log.info("Processed Stripe webhook (verified)");
         return ResponseEntity.ok().build();
     }
 
@@ -39,7 +42,8 @@ public class WebhookIngestionController {
             return ResponseEntity.badRequest().body("Invalid Square signature");
         }
 
-        log.info("Received Square webhook (verified)");
+        providerWebhookService.handleSquare(payload);
+        log.info("Processed Square webhook (verified)");
         return ResponseEntity.ok().build();
     }
 

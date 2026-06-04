@@ -2,7 +2,6 @@ package com.nexuspay.service;
 
 import com.nexuspay.domain.entity.*;
 import com.nexuspay.repository.PaymentIntentRepository;
-import com.nexuspay.repository.ProviderAccountRepository;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import java.math.BigInteger;
@@ -13,9 +12,9 @@ import static org.mockito.Mockito.*;
 class PaymentIntentServiceTest {
     
     @Mock private PaymentIntentRepository paymentIntentRepository;
-    @Mock private ProviderAccountRepository providerAccountRepository;
     @Mock private RoutingEngine routingEngine;
     @Mock private ProviderDispatcher providerDispatcher;
+    @Mock private OutboxService outboxService;
     
     @InjectMocks private PaymentIntentService service;
     

@@ -83,7 +83,7 @@ public class RetryService {
         
         ProviderAccount fallbackAccount = fallback.get();
         intent.setConnectorAccountId(fallbackAccount.getId());
-        intent.setResolvedProvider(fallbackAccount.getProvider());
+        intent.setResolvedProvider(PaymentIntent.Provider.valueOf(fallbackAccount.getProvider().name()));
         intent.setStatus(PaymentIntent.PaymentStatus.PROCESSING);
         
         PaymentIntentService.ChargeResult result = providerDispatcher.charge(
@@ -115,6 +115,18 @@ public class RetryService {
     public RetryConfig getRetryConfig(UUID merchantId) {
         // Default config - could be stored in database per merchant
         return new RetryConfig(3, 30000L, true);
+    }
+
+    @Transactional
+    public void processFailedPayments() {
+        paymentIntentRepository.findByStatus(PaymentIntent.PaymentStatus.FAILED)
+                .forEach(intent -> {
+                    try {
+                        executeRetry(intent.getId());
+                    } catch (Exception e) {
+                        log.warn("Retry failed for payment intent {}: {}", intent.getId(), e.getMessage());
+                    }
+                });
     }
     
     public record RetryConfig(int maxRetries, long retryDelayMs, boolean enableFallback) {}

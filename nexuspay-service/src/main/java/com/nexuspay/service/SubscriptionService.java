@@ -2,6 +2,7 @@ package com.nexuspay.service;
 
 import com.nexuspay.common.exception.BusinessException;
 import com.nexuspay.domain.entity.Customer;
+import com.nexuspay.domain.entity.PaymentIntent;
 import com.nexuspay.domain.entity.PaymentMethod;
 import com.nexuspay.domain.entity.Subscription;
 import com.nexuspay.repository.CustomerRepository;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
@@ -24,6 +27,7 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final CustomerRepository customerRepository;
     private final PaymentMethodRepository paymentMethodRepository;
+    private final PaymentIntentService paymentIntentService;
     
     @Transactional
     public Subscription create(UUID merchantId, CreateRequest req) {
@@ -106,32 +110,77 @@ public class SubscriptionService {
     public List<Subscription> getDueForRenewal() {
         return subscriptionRepository.findDueForRenewal(Instant.now());
     }
+
+    @Transactional
+    public void processDueRenewals() {
+        for (Subscription subscription : getDueForRenewal()) {
+            try {
+                renew(subscription);
+            } catch (Exception e) {
+                subscription.setStatus(Subscription.SubscriptionStatus.PAST_DUE);
+                subscriptionRepository.save(subscription);
+            }
+        }
+    }
+
+    private void renew(Subscription subscription) {
+        if (Boolean.TRUE.equals(subscription.getCancelAtPeriodEnd())) {
+            subscription.setStatus(Subscription.SubscriptionStatus.CANCELED);
+            subscription.setCanceledAt(Instant.now());
+            subscriptionRepository.save(subscription);
+            return;
+        }
+
+        if (subscription.getPaymentMethodId() == null) {
+            subscription.setStatus(Subscription.SubscriptionStatus.PAST_DUE);
+            subscriptionRepository.save(subscription);
+            return;
+        }
+
+        PaymentMethod paymentMethod = paymentMethodRepository.findByCustomerIdAndId(
+                        subscription.getCustomerId(), subscription.getPaymentMethodId())
+                .orElseThrow(() -> new BusinessException("Payment method not found", HttpStatus.NOT_FOUND));
+
+        PaymentIntent intent = paymentIntentService.create(subscription.getMerchantId(),
+                new PaymentIntentService.CreateRequest(
+                        java.math.BigInteger.valueOf(subscription.getAmount()),
+                        subscription.getCurrency(),
+                        PaymentIntent.Mode.TEST,
+                        PaymentIntent.CaptureMethod.AUTOMATIC,
+                        "sub_" + subscription.getId() + "_" + subscription.getCurrentPeriodEnd(),
+                        null,
+                        subscription.getPlanId(),
+                        subscription.getName(),
+                        null,
+                        null
+                ));
+
+        PaymentIntent confirmed = paymentIntentService.confirm(subscription.getMerchantId(), intent.getId(),
+                new PaymentIntentService.ConfirmRequest(paymentMethod.getType().name().toLowerCase(), paymentMethod.getProviderPaymentMethodId()));
+
+        if (confirmed.getStatus() == PaymentIntent.PaymentStatus.SUCCEEDED) {
+            subscription.setStatus(Subscription.SubscriptionStatus.ACTIVE);
+            calculateNextPeriod(subscription);
+        } else {
+            subscription.setStatus(Subscription.SubscriptionStatus.PAST_DUE);
+        }
+        subscriptionRepository.save(subscription);
+    }
     
     private void calculateNextPeriod(Subscription subscription) {
         Instant now = Instant.now();
         subscription.setCurrentPeriodStart(now);
-        
+
         int intervalCount = subscription.getIntervalCount();
-        ChronoUnit unit;
-        
-        switch (subscription.getInterval()) {
-            case DAY:
-                unit = ChronoUnit.DAYS;
-                break;
-            case WEEK:
-                unit = ChronoUnit.WEEKS;
-                break;
-            case MONTH:
-                unit = ChronoUnit.MONTHS;
-                break;
-            case YEAR:
-                unit = ChronoUnit.YEARS;
-                break;
-            default:
-                unit = ChronoUnit.MONTHS;
-        }
-        
-        subscription.setCurrentPeriodEnd(now.plus(intervalCount, unit));
+        ZonedDateTime current = now.atZone(ZoneOffset.UTC);
+        ZonedDateTime next = switch (subscription.getInterval()) {
+            case DAY -> current.plusDays(intervalCount);
+            case WEEK -> current.plusWeeks(intervalCount);
+            case MONTH -> current.plusMonths(intervalCount);
+            case YEAR -> current.plusYears(intervalCount);
+        };
+
+        subscription.setCurrentPeriodEnd(next.toInstant());
     }
     
     public record CreateRequest(

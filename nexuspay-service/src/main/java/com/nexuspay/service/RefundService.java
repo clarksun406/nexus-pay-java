@@ -2,6 +2,7 @@ package com.nexuspay.service;
 
 import com.nexuspay.common.exception.BusinessException;
 import com.nexuspay.domain.entity.PaymentIntent;
+import com.nexuspay.domain.entity.ProviderAccount;
 import com.nexuspay.domain.entity.Refund;
 import com.nexuspay.repository.PaymentIntentRepository;
 import com.nexuspay.repository.RefundRepository;
@@ -20,6 +21,7 @@ public class RefundService {
     
     private final RefundRepository refundRepository;
     private final PaymentIntentRepository paymentIntentRepository;
+    private final ProviderDispatcher providerDispatcher;
     
     @Transactional
     public Refund create(UUID merchantId, CreateRefundRequest req) {
@@ -33,8 +35,14 @@ public class RefundService {
         if (intent.getStatus() != PaymentIntent.PaymentStatus.SUCCEEDED) {
             throw new BusinessException("Payment not succeeded", HttpStatus.BAD_REQUEST);
         }
+        if (intent.getProviderPaymentId() == null || intent.getConnectorAccountId() == null || intent.getResolvedProvider() == null) {
+            throw new BusinessException("Payment has no provider charge to refund", HttpStatus.BAD_REQUEST);
+        }
         
         BigInteger refundAmount = req.amount() != null ? req.amount() : intent.getAmount();
+        if (refundAmount.compareTo(BigInteger.ZERO) <= 0 || refundAmount.compareTo(intent.getAmount()) > 0) {
+            throw new BusinessException("Invalid refund amount", HttpStatus.BAD_REQUEST);
+        }
         
         Refund refund = new Refund();
         refund.setPaymentIntentId(intent.getId());
@@ -44,10 +52,23 @@ public class RefundService {
         refund.setCurrency(intent.getCurrency());
         refund.setReason(req.reason());
         refund.setStatus(Refund.RefundStatus.PENDING);
-        
-        // Mock: Call provider API for refund
-        refund.setStatus(Refund.RefundStatus.SUCCEEDED);
-        refund.setProviderRefundId("re_" + UUID.randomUUID().toString().replace("-", ""));
+
+        var result = providerDispatcher.refund(
+                ProviderAccount.Provider.valueOf(intent.getResolvedProvider().name()),
+                intent.getProviderPaymentId(),
+                refundAmount,
+                intent.getCurrency(),
+                req.reason(),
+                intent.getConnectorAccountId()
+        );
+
+        refund.setProviderRefundId(result.providerRefundId());
+        if (result.success()) {
+            refund.setStatus(Refund.RefundStatus.SUCCEEDED);
+        } else {
+            refund.setStatus(Refund.RefundStatus.FAILED);
+            refund.setFailureReason(result.failureMessage());
+        }
         
         return refundRepository.save(refund);
     }

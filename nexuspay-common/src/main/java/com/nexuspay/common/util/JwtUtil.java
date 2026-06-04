@@ -68,4 +68,8 @@ public class JwtUtil {
     public UUID getUserId(String token) {
         return UUID.fromString(parseToken(token).getSubject());
     }
+
+    public boolean isAccessToken(String token) {
+        return "access".equals(parseToken(token).get("type", String.class));
+    }
 }

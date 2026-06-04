@@ -1,213 +1,118 @@
 # NexusPay Roadmap
 
-## Version 1.0.0 (Current) - Core Platform ✅
+Last updated: 2026-06-04
 
-### Backend
-- [x] Multi-module Maven project structure
-- [x] Domain-Driven Design architecture
-- [x] PostgreSQL with Flyway migrations
-- [x] JWT + API Key authentication
-- [x] Multi-provider support (Stripe, Square, Braintree)
-- [x] **Real provider SDK integration** (Stripe 24.0.0, Square 40.1.0, Braintree 3.31.0)
-- [x] Intelligent routing with weighted selection
-- [x] Payment lifecycle (create, confirm, capture, cancel)
-- [x] Refund processing
-- [x] 3D Secure authentication flow
-- [x] Retry mechanism with exponential backoff
-- [x] Health monitoring with auto-demotion
-- [x] Webhook delivery with HMAC signing
-- [x] **Webhook ingestion** (Stripe, Square, Braintree)
-- [x] MFA (TOTP) support
-- [x] Role-based access control
-- [x] Payment links
-- [x] **Dispute handling** with evidence submission
-- [x] **Payout reconciliation** with hourly aggregation
-- [x] **Embedded checkout** (/pub/tokenize)
-- [x] **Rate limiting** (token bucket)
-- [x] **Gateway audit logs**
-- [x] **Outbox pattern** for transactional webhooks
+## Current Status
 
-### Frontend
-- [x] Vue 3 + Vite + Tailwind CSS
-- [x] Dashboard layout with navigation
-- [x] Login/Register pages
-- [x] Payments list and detail
-- [x] Connectors management
-- [x] Routing rules configuration
-- [x] API keys management
-- [x] Webhooks configuration
-- [x] Team management
-- [x] Payment link public page
-- [x] **Disputes page**
-- [x] **Payouts page**
-- [x] **API Logs page**
+NexusPay Java is in a v1 stabilization phase. The core backend modules, provider adapter surface, dashboard APIs, Elements SDK skeleton, and admin foundations exist, but the project should not be treated as fully production-ready until the remaining verification and security gaps are closed.
 
-### Infrastructure
-- [x] Docker + docker-compose
-- [x] GitHub Actions CI
-- [x] Swagger/OpenAPI documentation
-- [x] ~60% test coverage
+The current high-priority stabilization work has been implemented in code and is ready for a Java 17 compile/test pass.
 
-### Security
-- [x] Rate limiting on /auth, /pub, /api/v1/payment-intents
-- [x] Gateway request logging with trace IDs
-- [x] Outbox pattern for reliable webhook delivery
-- [x] AES-256-GCM credential encryption
-- [x] Password reset flow
-- [x] MFA backup codes
+## v1.0.1 - High-Priority Stabilization
 
----
+Status: implemented, pending Java 17 verification.
 
-## Version 1.1.0 - Enhanced Testing & Observability
+Completed in this cycle:
+- Moved request authentication filters into the web module and restored request context population for JWT and API-key flows.
+- Enforced merchant path/header ownership checks for authenticated dashboard and secret-key requests.
+- Added access-token validation so refresh tokens are not accepted as request authentication.
+- Replaced mock refund IDs with provider-dispatched refunds through the provider port.
+- Added provider refund and payment-status abstractions for Stripe, Square, and Braintree adapters.
+- Added provider webhook state synchronization for Stripe and Square payment events.
+- Updated outbound outbox payloads to include merchant IDs and terminal payment status.
+- Made webhook delivery failures visible to the outbox retry loop.
+- Connected the scheduler to health checks, payout summaries, failed-payment retries, subscription renewals, and outbox processing.
+- Added provider-status based reconciliation instead of returning an always-empty discrepancy list.
+- Replaced admin overview and monitoring mock data with repository/provider aggregates.
+- Added a minimal subscription renewal loop with period rollover handling.
+- Updated focused service tests for the changed refund, payment intent, and retry behavior.
 
-### Testing
-- [ ] Increase test coverage to 80%+
-- [ ] Integration tests with Testcontainers
-- [ ] E2E tests for frontend (Playwright/Cypress)
-- [ ] Mutation testing (PIT)
-- [ ] Load testing (JMeter/Gatling)
+Verification notes:
+- Local Maven currently runs with `D:\Java\jdk1.8.0_202`, but this project requires Java 17.
+- `mvn -DskipTests compile` cannot complete under the current Java 8 environment.
+- `mvnw.cmd` exists, but the Maven wrapper support directory is missing, so use system Maven after configuring JDK 17.
+- Square and Braintree adapter method signatures still need a compile pass with their SDK jars available.
 
-### Observability
-- [ ] Prometheus metrics implementation
-- [ ] Grafana dashboards
-- [ ] Structured logging (Logback/ELK)
-- [ ] Distributed tracing (OpenTelemetry)
-- [ ] Health check enhancements
+## v1.0.2 - Build and Provider Verification
 
-### Database
-- [ ] Connection pooling (HikariCP tuning)
-- [ ] Read replicas support
-- [ ] Database migration rollback strategy
+Priority: high.
 
----
+- Configure local and CI builds to use JDK 17.
+- Repair or regenerate the Maven wrapper.
+- Run full backend compile and test suites.
+- Validate Square refund/status calls against Square SDK 40.1.0.
+- Validate Braintree refund/status calls against Braintree SDK 3.31.0.
+- Add provider contract tests or mocked adapter tests for refund/status/webhook state transitions.
+- Add regression tests for merchant tenant enforcement in JWT and API-key requests.
 
-## Version 1.2.0 - Caching & Performance
+## v1.1.0 - Security and Access Control
 
-### Caching
-- [ ] Redis integration
-- [ ] Cache routing rules
-- [ ] Cache provider configurations
-- [ ] Session storage in Redis
-- [ ] Rate limiting with Redis
+Priority: high.
 
-### Performance
-- [ ] API response caching
-- [ ] Database query optimization
-- [ ] Async payment processing
-- [ ] Webhook delivery queue
+- Implement `AdminAuthController` for platform admin login/refresh/logout.
+- Implement `AdminJwtFilter` and separate admin JWT claims from merchant JWT claims.
+- Replace enum-only role checks with permission-backed RBAC tables.
+- Add `permissions`, `roles`, `role_permissions`, and `user_roles` migrations.
+- Add permission entities, repositories, services, and seed data.
+- Add `@RequirePermission` and an AOP permission check for protected operations.
+- Add frontend route guards and permission-aware UI controls.
 
-### Security
-- [x] Rate limiting per IP/API key
-- [ ] AES-256-GCM credential encryption
-- [ ] IP allowlisting
-- [ ] Encryption at rest
+## v1.2.0 - Billing and Dashboard Completion
 
----
+Priority: medium.
 
-## Version 1.3.0 - Additional Providers
+- Add invoice entity, migrations, API, and subscription invoice events.
+- Align frontend dashboard routes and API clients for `/customers` and `/subscriptions`.
+- Complete refunds and webhook endpoint pages in the merchant dashboard.
+- Complete admin pages for merchant management, monitoring, provider configuration, reports, and audit logs.
+- Add SMTP-backed email delivery for verification, reset, and notifications.
+- Add password reset and MFA backup-code user flows if missing from deployed UI paths.
 
-### New Providers
-- [ ] PayPal integration
-- [ ] Adyen integration
-- [ ] Checkout.com integration
-- [ ] Provider SDK abstraction
+## v1.3.0 - Quality and Observability
 
-### Features
-- [ ] Provider-specific features support
-- [ ] Multi-currency handling
-- [ ] Payment method tokens
-- [ ] Recurring payments
+Priority: medium.
 
----
+- Raise automated test coverage with focused unit and integration tests.
+- Add Testcontainers coverage for repository, service, and webhook flows.
+- Add Playwright or Cypress E2E coverage for merchant and admin workflows.
+- Add Prometheus metrics, Grafana dashboards, and structured logging.
+- Add OpenTelemetry tracing for request, provider, and webhook delivery paths.
+- Add Redis for distributed rate limiting, sessions/blacklists, and hot config caching.
 
-## Version 2.0.0 - Enterprise Features
+## v1.4.0 - Provider and Payment Method Expansion
 
-### Multi-Tenancy
-- [ ] Organization-level isolation
-- [ ] Custom branding per merchant
-- [ ] White-label support
-- [ ] Tenant-specific configurations
+Priority: medium to low.
 
-### Advanced Routing
-- [ ] ML-based routing optimization
-- [ ] Cost-based routing (fee-aware)
-- [ ] Success rate prediction
-- [ ] A/B testing for routing
+- Add PayPal provider support.
+- Add Adyen and Checkout.com provider support.
+- Expand provider-specific capabilities while keeping the provider port stable.
+- Add more APM support to the Elements SDK.
+- Improve 3DS automation and iframe handoff in the Payment Element.
+- Add React and Vue Elements wrappers and publishable package artifacts.
 
-### Analytics
-- [ ] Revenue analytics dashboard
-- [ ] Payment success metrics
-- [ ] Provider performance comparison
-- [ ] Custom reports
+## v2.0.0 - Enterprise Features
 
-### Compliance
-- [ ] PCI DSS compliance checklist
-- [ ] GDPR data export/deletion
-- [ ] SOC 2 preparation
-- [ ] Data retention policies
+Priority: future.
 
----
+- Organization-level isolation and tenant administration.
+- White-label merchant branding.
+- Fee-aware and ML-assisted routing.
+- Revenue analytics and provider performance reporting.
+- PCI DSS, GDPR, SOC 2, and data-retention readiness work.
 
-## Version 3.0.0 - Cloud Native
+## v3.0.0 - Cloud Native
 
-### Kubernetes
-- [ ] Helm charts
-- [ ] Kubernetes operators
-- [ ] Auto-scaling
-- [ ] Blue-green deployments
+Priority: future.
 
-### Cloud Provider Support
-- [ ] AWS deployment (EKS, RDS, ElastiCache)
-- [ ] GCP deployment (GKE, Cloud SQL, Memorystore)
-- [ ] Azure deployment (AKS, Azure DB, Redis Cache)
+- Helm charts and Kubernetes deployment assets.
+- Autoscaling and blue/green deployment workflows.
+- AWS, GCP, and Azure deployment guides.
+- Multi-region disaster recovery and backup procedures.
 
-### Disaster Recovery
-- [ ] Multi-region deployment
-- [ ] Database replication
-- [ ] Automated backups
-- [ ] Recovery procedures
+## Immediate Next Steps
 
----
-
-## Feature Comparison with Original Node.js Version
-
-| Feature | Node.js | Java | Status |
-|---------|---------|------|--------|
-| Payment Intent lifecycle | ✅ | ✅ | Complete |
-| Multi-provider routing | ✅ | ✅ | Complete |
-| Real SDK integration | ✅ | ✅ | Complete |
-| 3DS authentication | ✅ | ✅ | Complete |
-| Webhook ingestion | ✅ | ✅ | Complete |
-| Webhook delivery | ✅ | ✅ | Complete |
-| Dispute handling | ✅ | ✅ | Complete |
-| Payout reconciliation | ✅ | ✅ | Complete |
-| Rate limiting | ✅ | ✅ | Complete |
-| Audit logging | ✅ | ✅ | Complete |
-| Embedded checkout | ✅ | ✅ | Complete |
-| AES-256-GCM encryption | ✅ | ✅ | Complete |
-| Password reset | ✅ | ✅ | Complete |
-| MFA backup codes | ✅ | ✅ | Complete |
-| SMTP email | ✅ | ⚠️ | Pending |
-
----
-
-## Timeline
-
-| Version | Target Date | Status |
-|---------|-------------|--------|
-| 1.0.0 | Q2 2024 | ✅ Complete |
-| 1.1.0 | Q3 2024 | 📋 Planned |
-| 1.2.0 | Q4 2024 | 📋 Planned |
-| 1.3.0 | Q1 2025 | 📋 Planned |
-| 2.0.0 | Q2 2025 | 📋 Planned |
-| 3.0.0 | Q4 2025 | 📋 Planned |
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-## Feature Requests
-
-Open an issue with the `enhancement` label or start a discussion in GitHub Discussions.
+1. Switch local build/runtime to JDK 17.
+2. Run `mvn -DskipTests compile`.
+3. Fix any SDK signature issues surfaced by the compile pass.
+4. Run service tests and add missing auth/provider regression tests.
+5. Continue with admin auth and permission-backed RBAC.

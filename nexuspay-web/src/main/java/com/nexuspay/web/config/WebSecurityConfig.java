@@ -1,7 +1,7 @@
 package com.nexuspay.web.config;
 
-import com.nexuspay.common.security.ApiKeyAuthenticationFilter;
-import com.nexuspay.common.security.JwtAuthenticationFilter;
+import com.nexuspay.web.security.ApiKeyAuthenticationFilter;
+import com.nexuspay.web.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

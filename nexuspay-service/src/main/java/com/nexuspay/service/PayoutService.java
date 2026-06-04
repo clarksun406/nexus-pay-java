@@ -7,14 +7,16 @@ import com.nexuspay.repository.PaymentIntentRepository;
 import com.nexuspay.repository.PayoutRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigInteger;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -35,11 +37,38 @@ public class PayoutService {
                 .orElseThrow(() -> new IllegalArgumentException("Payout not found"));
     }
     
-    @Scheduled(fixedRate = 3600000) // Hourly
     @Transactional
     public void generatePayoutSummaries() {
         log.info("Generating payout summaries");
-        // In production, aggregate by (merchant, connector, currency, mode)
+        Instant periodEnd = Instant.now().truncatedTo(ChronoUnit.HOURS);
+        Instant periodStart = periodEnd.minus(1, ChronoUnit.HOURS);
+
+        Map<PayoutGroup, List<PaymentIntent>> groups = paymentIntentRepository
+                .findByStatus(PaymentIntent.PaymentStatus.SUCCEEDED)
+                .stream()
+                .filter(intent -> intent.getConnectorAccountId() != null)
+                .filter(intent -> intent.getCreatedAt() != null
+                        && !intent.getCreatedAt().isBefore(periodStart)
+                        && intent.getCreatedAt().isBefore(periodEnd))
+                .collect(java.util.stream.Collectors.groupingBy(
+                        intent -> new PayoutGroup(
+                                intent.getMerchantId(),
+                                intent.getConnectorAccountId(),
+                                intent.getCurrency(),
+                                intent.getMode()
+                        ),
+                        LinkedHashMap::new,
+                        java.util.stream.Collectors.toList()
+                ));
+
+        groups.forEach((group, intents) -> createPayout(
+                group.merchantId(),
+                group.connectorId(),
+                group.currency(),
+                group.mode(),
+                periodStart,
+                periodEnd
+        ));
     }
     
     @Transactional
@@ -51,7 +80,14 @@ public class PayoutService {
             return payoutRepository.findByIdempotencyKey(idempotencyKey).get();
         }
         
-        List<PaymentIntent> intents = paymentIntentRepository.findByMerchantId(merchantId);
+        List<PaymentIntent> intents = paymentIntentRepository.findByMerchantId(merchantId).stream()
+                .filter(i -> Objects.equals(i.getConnectorAccountId(), connectorId))
+                .filter(i -> i.getMode() == mode)
+                .filter(i -> i.getCurrency().equalsIgnoreCase(currency))
+                .filter(i -> i.getCreatedAt() != null
+                        && !i.getCreatedAt().isBefore(periodStart)
+                        && i.getCreatedAt().isBefore(periodEnd))
+                .toList();
         
         BigInteger totalAmount = intents.stream()
                 .filter(i -> i.getStatus() == PaymentIntent.PaymentStatus.SUCCEEDED)
@@ -72,7 +108,9 @@ public class PayoutService {
         payout.setPeriodStart(periodStart);
         payout.setPeriodEnd(periodEnd);
         payout.setIdempotencyKey(idempotencyKey);
-        payout.setItemsCount(intents.size());
+        payout.setItemsCount((int) intents.stream()
+                .filter(i -> i.getStatus() == PaymentIntent.PaymentStatus.SUCCEEDED)
+                .count());
         
         return payoutRepository.save(payout);
     }
@@ -84,4 +122,6 @@ public class PayoutService {
             merchantId + "_" + connectorId + "_" + currency + "_" + mode + "_" + 
             periodStart.toString() + "_" + periodEnd.toString(), "payout");
     }
+
+    private record PayoutGroup(UUID merchantId, UUID connectorId, String currency, PaymentIntent.Mode mode) {}
 }

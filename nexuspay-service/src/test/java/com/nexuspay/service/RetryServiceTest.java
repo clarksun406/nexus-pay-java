@@ -186,7 +186,7 @@ class RetryServiceTest {
 
         assertEquals(PaymentIntent.PaymentStatus.SUCCEEDED, result.getStatus());
         assertEquals(fallbackId, result.getConnectorAccountId());
-        assertEquals(ProviderAccount.Provider.SQUARE, result.getResolvedProvider());
+        assertEquals(PaymentIntent.Provider.SQUARE, result.getResolvedProvider());
         assertEquals("pay_1", result.getProviderPaymentId());
         verify(paymentIntentRepository).save(intent);
     }

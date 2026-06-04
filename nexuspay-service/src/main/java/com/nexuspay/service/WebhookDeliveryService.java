@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ public class WebhookDeliveryService {
 
     public void sendWebhook(UUID merchantId, String eventType, UUID paymentIntentId, String status) {
         List<WebhookEndpoint> endpoints = webhookEndpointRepository.findByMerchantId(merchantId);
+        List<String> failures = new ArrayList<>();
 
         for (WebhookEndpoint endpoint : endpoints) {
             if (endpoint.getStatus() != WebhookEndpoint.EndpointStatus.ACTIVE) {
@@ -48,7 +50,12 @@ public class WebhookDeliveryService {
                 deliverWebhook(endpoint, eventType, paymentIntentId, status);
             } catch (Exception e) {
                 log.error("Failed to deliver webhook to {}: {}", endpoint.getUrl(), e.getMessage(), e);
+                failures.add(endpoint.getUrl() + ": " + e.getMessage());
             }
+        }
+
+        if (!failures.isEmpty()) {
+            throw new IllegalStateException("Webhook delivery failed: " + String.join("; ", failures));
         }
     }
 

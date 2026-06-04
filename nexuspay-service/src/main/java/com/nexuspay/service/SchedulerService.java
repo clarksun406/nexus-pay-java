@@ -11,6 +11,10 @@ import org.springframework.stereotype.Service;
 public class SchedulerService {
     
     private final HealthMonitorService healthMonitorService;
+    private final RetryService retryService;
+    private final OutboxService outboxService;
+    private final SubscriptionService subscriptionService;
+    private final PayoutService payoutService;
     
     @Scheduled(fixedRate = 60000)
     public void runHealthCheck() {
@@ -20,19 +24,20 @@ public class SchedulerService {
     
     @Scheduled(fixedRate = 300000) // 5 minutes
     public void runReconciliation() {
-        log.debug("Running scheduled reconciliation");
-        // Run reconciliation for all merchants
+        log.debug("Generating scheduled payout summaries");
+        payoutService.generatePayoutSummaries();
     }
     
     @Scheduled(fixedRate = 60000)
     public void processRetries() {
         log.debug("Processing pending retries");
-        // Process payment retries with exponential backoff
+        retryService.processFailedPayments();
+        subscriptionService.processDueRenewals();
     }
     
     @Scheduled(fixedRate = 10000)
     public void processWebhooks() {
         log.debug("Processing pending webhook deliveries");
-        // Deliver pending webhooks
+        outboxService.processOutbox();
     }
 }
