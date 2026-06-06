@@ -7,6 +7,7 @@ import com.nexuspay.repository.MerchantRepository;
 import com.nexuspay.repository.OrganizationRepository;
 import com.nexuspay.repository.PaymentIntentRepository;
 import com.nexuspay.repository.ProviderAccountRepository;
+import com.nexuspay.service.RequirePermission;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +32,7 @@ public class AdminController {
     private final ProviderAccountRepository providerAccountRepository;
 
     @GetMapping("/overview")
+    @RequirePermission("SYSTEM_MONITOR")
     public ResponseEntity<OverviewStats> getOverview() {
         List<PaymentIntent> intents = paymentIntentRepository.findAll();
         long succeeded = intents.stream()
@@ -71,6 +73,7 @@ public class AdminController {
     }
 
     @PostMapping("/merchants/{merchantId}/approve")
+    @RequirePermission("MERCHANT_APPROVE")
     public ResponseEntity<Map<String, String>> approveMerchant(@PathVariable UUID merchantId) {
         Merchant merchant = merchantRepository.findById(merchantId)
                 .orElseThrow(() -> new NoSuchElementException("Merchant not found"));
@@ -80,6 +83,7 @@ public class AdminController {
     }
 
     @PostMapping("/merchants/{merchantId}/reject")
+    @RequirePermission("MERCHANT_SUSPEND")
     public ResponseEntity<Map<String, String>> rejectMerchant(
             @PathVariable UUID merchantId,
             @RequestBody Map<String, String> body) {
@@ -95,6 +99,7 @@ public class AdminController {
     }
 
     @GetMapping("/monitoring")
+    @RequirePermission("SYSTEM_MONITOR")
     public ResponseEntity<MonitoringData> getMonitoring() {
         Map<ProviderAccount.Provider, List<ProviderAccount>> byProvider = providerAccountRepository.findAll().stream()
                 .collect(Collectors.groupingBy(ProviderAccount::getProvider));

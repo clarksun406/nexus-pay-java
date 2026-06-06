@@ -62,14 +62,15 @@ public class PaymentIntentRepositoryImpl implements PaymentIntentRepository {
     }
     
     private PaymentIntentAggregate toAggregate(com.nexuspay.domain.entity.PaymentIntent e) {
-        var agg = new PaymentIntentAggregate(
+        return PaymentIntentAggregate.reconstruct(
                 e.getId(), e.getMerchantId(),
                 Money.of(e.getAmount(), e.getCurrency()),
                 e.getIdempotencyKey(),
-                e.getCaptureMethod() == com.nexuspay.domain.entity.PaymentIntent.CaptureMethod.MANUAL);
-        if (e.getResolvedProvider() != null) {
-            agg.confirm(e.getPaymentMethodType(), ProviderType.valueOf(e.getResolvedProvider().name()), e.getConnectorAccountId());
-        }
-        return agg;
+                e.getCaptureMethod() == com.nexuspay.domain.entity.PaymentIntent.CaptureMethod.MANUAL,
+                PaymentStatus.valueOf(e.getStatus().name()),
+                e.getResolvedProvider() != null ? ProviderType.valueOf(e.getResolvedProvider().name()) : null,
+                e.getConnectorAccountId(),
+                e.getProviderPaymentId(),
+                e.getPaymentMethodType());
     }
 }

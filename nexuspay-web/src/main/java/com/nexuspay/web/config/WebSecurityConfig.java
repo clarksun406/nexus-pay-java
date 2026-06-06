@@ -1,5 +1,6 @@
 package com.nexuspay.web.config;
 
+import com.nexuspay.web.security.AdminJwtFilter;
 import com.nexuspay.web.security.ApiKeyAuthenticationFilter;
 import com.nexuspay.web.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ public class WebSecurityConfig {
     
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
+    private final AdminJwtFilter adminJwtFilter;
     
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -28,9 +30,12 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/health", "/actuator/**").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/admin/auth/**").permitAll()
                         .requestMatchers("/pub/**").permitAll()
+                        .requestMatchers("/webhooks/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(adminJwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         

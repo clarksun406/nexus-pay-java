@@ -23,8 +23,24 @@ export class SetupElement extends Element {
     this.container.appendChild(this.iframe);
 
     receiveMessages(this.iframeOrigin, (message) => {
-      if (message.type === 'nexuspay:ready') this.emit('ready');
+      if (message.type === 'nexuspay:ready') {
+        this.emit('ready');
+        this.sendConfig();
+      }
       if (message.type === 'nexuspay:change') this.updateState(message.payload);
+    });
+  }
+
+  private sendConfig(): void {
+    if (!this.iframe?.contentWindow) return;
+
+    sendMessage(this.iframe.contentWindow, this.iframeOrigin, {
+      type: 'nexuspay:config',
+      payload: {
+        publishableKey: this.config.publishableKey,
+        apiBase: this.config.apiBase,
+        locale: this.config.locale,
+      },
     });
   }
 

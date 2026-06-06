@@ -89,6 +89,7 @@
       const currency = params.get('currency') || 'usd';
 
       const container = document.getElementById('container');
+      let config = {};
       let selectedMethod = methods[0];
 
       // Render based on layout
@@ -257,6 +258,11 @@
 
       // Handle tokenize request
       window.addEventListener('message', async (event) => {
+        if (event.data.type === 'nexuspay:config') {
+          config = event.data.payload || {};
+          return;
+        }
+
         if (event.data.type === 'nexuspay:tokenize') {
           if (selectedMethod === 'card') {
             const cardNumber = document.getElementById('cardNumber')?.value.replace(/\s/g, '');
@@ -268,14 +274,70 @@
               return;
             }
 
-            // Send to backend for tokenization
-            sendToParent('nexuspay:tokenize:success', { 
-              token: `card_${Date.now()}`,
-              method: 'card',
-              card: { last4: cardNumber.slice(-4), brand: 'VISA' }
-            });
+            try {
+              const response = await fetch(`${config.apiBase || ''}/pub/elements/tokenize`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': config.publishableKey,
+                },
+                body: JSON.stringify({
+                  card: {
+                    number: cardNumber,
+                    exp_month: expiry[1],
+                    exp_year: '20' + expiry[2],
+                    cvc: cvc,
+                  },
+                  brand: 'CARD',
+                }),
+              });
+
+              const data = await response.json();
+              if (response.ok && data.token) {
+                sendToParent('nexuspay:tokenize:success', {
+                  token: data.token,
+                  method: 'card',
+                  card: { last4: data.last4, brand: data.brand }
+                });
+              } else {
+                sendToParent('nexuspay:tokenize:error', {
+                  error: data.error || { type: 'api_error', message: 'Tokenization failed' }
+                });
+              }
+            } catch (e) {
+              sendToParent('nexuspay:tokenize:error', {
+                error: { type: 'api_error', message: e.message || 'Network error' }
+              });
+            }
           } else {
-            sendToParent('nexuspay:tokenize:success', { token: `${selectedMethod}_${Date.now()}`, method: selectedMethod });
+            try {
+              const response = await fetch(`${config.apiBase || ''}/pub/elements/tokenize`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': config.publishableKey,
+                },
+                body: JSON.stringify({
+                  wallet: {
+                    walletType: selectedMethod,
+                    walletId: `${selectedMethod}_${Date.now()}`,
+                  },
+                }),
+              });
+
+              const data = await response.json();
+              if (response.ok && data.token) {
+                sendToParent('nexuspay:tokenize:success', { token: data.token, method: selectedMethod });
+              } else {
+                sendToParent('nexuspay:tokenize:error', {
+                  error: data.error || { type: 'api_error', message: 'Tokenization failed' }
+                });
+              }
+            } catch (e) {
+              sendToParent('nexuspay:tokenize:error', {
+                error: { type: 'api_error', message: e.message || 'Network error' }
+              });
+            }
           }
         }
       });

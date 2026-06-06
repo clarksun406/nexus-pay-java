@@ -1,6 +1,6 @@
 # NexusPay Roadmap
 
-Last updated: 2026-06-04
+Last updated: 2026-06-06
 
 ## Current Status
 
@@ -45,7 +45,47 @@ Priority: high.
 - Add provider contract tests or mocked adapter tests for refund/status/webhook state transitions.
 - Add regression tests for merchant tenant enforcement in JWT and API-key requests.
 
+## v1.0.3 - Architecture Alignment: DDD Domain Layer vs Application Layer
+
+Status: implemented.
+
+Priority: high.
+
+The project has a well-designed DDD domain layer (`PaymentIntentAggregate`, `ConnectorAggregate`, `RoutingRuleAggregate`, `Money`, `PaymentStatus`, `RoutingRuleMatcher`, `RoutingDomainService`, `PaymentDomainService`) but the actual business logic in the Application Service layer bypasses it entirely. All payment lifecycle logic, routing matching, refund validation, subscription period calculation, and payout aggregation are implemented directly on JPA entities via setters in Application Services (`PaymentIntentService`, `RoutingEngine`, `RefundService`, `SubscriptionService`, `PayoutService`, etc.). This is a Transaction Script architecture wearing a DDD directory structure.
+
+### Problem Summary
+
+| Component | Domain Layer (unused) | Application Layer (actual) |
+|-----------|----------------------|---------------------------|
+| Payment state machine | `PaymentIntentAggregate.confirm/capture/cancel` with status guards | `PaymentIntentService` direct `setStatus()` + manual if-checks |
+| Routing matching | `RoutingRuleMatcher.matches(RoutingCriteria)` with value objects | `RoutingEngine.matches()` with `Arrays.asList(str.split(","))` |
+| Weighted selection | `RoutingDomainService.weightedSelect(ConnectorAggregate)` | `RoutingEngine.weightedSelect(ProviderAccount)` - duplicated logic |
+| Domain events | `PaymentSucceededEvent` / `PaymentFailedEvent` emitted by aggregate | `publishIfTerminal()` in Application Service |
+| Money operations | `Money.add/subtract/isGreaterThan` value object | `BigInteger` operations scattered in services |
+
+### Required Changes
+
+- Wire Application Services to use domain aggregates and domain services instead of directly manipulating JPA entities.
+- Route `PaymentIntentService.confirm()` through `PaymentDomainService` → `PaymentIntentAggregate`.
+- Route `RoutingEngine.resolve()` through `RoutingDomainService.resolve()`.
+- Move `calculateNextPeriod()` from `SubscriptionService` into a `Subscription` aggregate or domain service.
+- Move refund amount validation from `RefundService` into domain logic.
+- Align `ProviderAccount` and `ConnectorAggregate` so the routing domain service operates on aggregates rather than JPA entities.
+- Remove duplicated matching/selection logic between `RoutingEngine` and `RoutingDomainService`.
+- Add domain event publishing through aggregates rather than Application Service helper methods.
+- Add tests that verify domain aggregates enforce invariants (state transitions, business rules).
+
+### Verification
+
+- After alignment, `PaymentIntentService` should delegate to domain layer for state transitions rather than calling `setStatus()` directly.
+- `RoutingEngine` should be a thin facade over `RoutingDomainService`, not contain its own matching logic.
+- All business rule validation (refund amount, subscription period, payment status guards) should live in domain aggregates or domain services.
+
+---
+
 ## v1.1.0 - Security and Access Control
+
+Status: implemented.
 
 Priority: high.
 
@@ -58,6 +98,8 @@ Priority: high.
 - Add frontend route guards and permission-aware UI controls.
 
 ## v1.2.0 - Billing and Dashboard Completion
+
+Status: implemented.
 
 Priority: medium.
 
@@ -90,6 +132,27 @@ Priority: medium to low.
 - Improve 3DS automation and iframe handoff in the Payment Element.
 - Add React and Vue Elements wrappers and publishable package artifacts.
 
+## v1.5.0 - Card Vault
+
+Status: implemented, pending Java 17 verification.
+
+Priority: high.
+
+Completed in this cycle:
+- Added polymorphic vault storage for cards, bank accounts, and wallets.
+- Added per-entry AES-256-GCM data keys wrapped by a master+custodian key model.
+- Added vault token hashing, merchant-scoped fingerprinting, active-token deduplication, and integrity signatures.
+- Avoided storing CVC in encrypted card payloads.
+- Added vault audit logs for tokenize, detokenize, read/deduplication, and revoke operations.
+- Added authenticated merchant Vault APIs for tokenize, list, detokenize, revoke, and audit log retrieval.
+- Replaced public gateway token stubs with real `vault_` token creation through `/pub/tokenize` and `/pub/elements/tokenize`.
+- Wired Card/Payment/Setup Elements tokenization paths to the vault endpoint.
+- Added focused `VaultServiceTest` coverage for sensitive-field handling, deduplication, tenant isolation, and revoke behavior.
+
+Verification notes:
+- Backend compile/tests still require switching the local Maven runtime from Java 8 to Java 17.
+- A full Java 17 pass should include `mvn -pl nexuspay-service -Dtest=VaultServiceTest test` and `mvn -DskipTests compile`.
+
 ## v2.0.0 - Enterprise Features
 
 Priority: future.
@@ -109,10 +172,68 @@ Priority: future.
 - AWS, GCP, and Azure deployment guides.
 - Multi-region disaster recovery and backup procedures.
 
+---
+
+## Gap Analysis: NexusPay vs Hyperswitch
+
+Comparison against [Hyperswitch](https://github.com/juspay/hyperswitch) (juspay, Rust, 42.8k stars, 300+ connectors) — the leading open-source payment orchestration platform.
+
+### Feature Gap Summary
+
+| # | Capability | Hyperswitch | NexusPay | Gap |
+|---|-----------|-------------|----------|-----|
+| 1 | **Card Vault / Locker** | PCI DSS L1 vault, JWS/JWE encryption, master+custodian key model, polymorphic storage | None | **Major** |
+| 2 | **Network Tokenization** | Visa/MC network tokens, 3 flows (payment-time, vault-time, standalone API), cryptogram management | None | **Major** |
+| 3 | **Cost Observability** | Granular per-provider/per-method/per-region cost breakdown, invoice auditing, interchange downgrade detection, scheme fee analysis, PSP markup transparency | Basic payout fee calc (2.9% hardcoded) | **Major** |
+| 4 | **Revenue Recovery / Smart Retries** | ML-powered, 20+ parameters, 4 retry categories (cascading, step-up, clear PAN, global network), configurable per subscription/PM, error code DB across 100+ processors | Basic exponential backoff, no categorization | **Major** |
+| 5 | **DSL-Based Routing** | No-code rule config (BIN/currency/amount/metadata), volume-based %, A/B traffic split, cost-based routing | Basic weighted + priority routing, string-split matching | **Medium** |
+| 6 | **Connector Count** | 300+ processors via connector template system | 3 (Stripe, Square, Braintree) | **Major** |
+| 7 | **Org Hierarchy & Multi-tenancy** | Organization → Account → Profile model, hierarchical isolation, programmatic onboarding, BYOP (Bring Your Own Processor), MoR + Connected Account models | Flat Organization → Merchant, no hierarchy | **Medium** |
+| 8 | **APM Widget** | Embeddable APM widgets, Klarna/WeChat/Alipay/Affirm etc. | Basic Elements SDK skeleton (Card/Payment/ApplePay/GooglePay/Alipay/WeChat) | **Medium** |
+| 9 | **3-Way Reconciliation** | 2-way + 3-way, backdated support, staggered scheduling, customizable outputs | Basic 2-way provider status comparison | **Medium** |
+| 10 | **Fraud/Risk Integration** | Downstream-of-risk-engine integration pattern | None | **Major** |
+| 11 | **Redis Infrastructure** | Redis for caching + job queuing (Scheduler Producer/Consumer) | Not implemented (roadmap mention only) | **Medium** |
+| 12 | **Observability Stack** | OTel traces, Prometheus metrics, Loki logs, Tempo tracing, Grafana dashboards — all production-ready | Not implemented (roadmap mention only) | **Medium** |
+| 13 | **K8s/Cloud Deployment** | Helm charts, AWS CDK, BYOC self-hosted model | docker-compose only | **Medium** |
+| 14 | **Control Center** | Full hosted sandbox, connector config UI, routing rules UI, logs viewer, retry config UI | Separate Vue dashboards (merchant + admin), partial coverage | **Medium** |
+| 15 | **PCI DSS / GDPR Compliance** | Built-in: PCI DSS L1 vault, GDPR PII storage, data retention | Not implemented (v2.0.0 roadmap mention) | **Major** |
+| 16 | **3DS / SCA** | Automatic 3DS challenge handling, frictionless + challenge flows | Basic 3DS skeleton, action URL field only | **Medium** |
+
+### Priority Roadmap Integration
+
+Based on the gap analysis, the following should be prioritized in future versions:
+
+| Version | New Items from Gap Analysis |
+|---------|---------------------------|
+| v1.0.3 | Architecture alignment (already defined) |
+| v1.1.0 | Security + RBAC (already defined) |
+| v1.2.0 | Billing completion (already defined) + **DSL-based routing rules** with volume %, A/B testing |
+| v1.3.0 | Quality + observability (already defined) + **Redis infrastructure** (caching, rate limiting, job queues) + **Full OTel/Prometheus/Grafana/Loki/Tempo stack** |
+| v1.4.0 | Provider expansion (already defined) + **Connector template system** for rapid provider onboarding |
+| **v1.5.0** | **Card Vault**: implemented vault tokens, envelope encryption, master+custodian key wrapping, audit logs, and polymorphic storage for cards/bank accounts/wallets. Java 17 verification pending. |
+| **v1.6.0 (new)** | **Smart Retries & Revenue Recovery**: ML-powered retry engine, categorized error handling (cascading/step-up/clear PAN/global network), error code DB, configurable strategies per subscription/payment method |
+| **v1.7.0 (new)** | **Cost Observability**: per-provider/per-method/per-region cost breakdown, invoice auditing, interchange downgrade detection, PSP markup transparency |
+| **v1.8.0 (new)** | **Network Tokenization**: Visa/MC network token provisioning, 3 integration flows, cryptogram management |
+| v2.0.0 | Enterprise (already defined) + **Fraud/Risk engine integration**, **3-way reconciliation**, **PCI/GDPR compliance hardening** |
+| v3.0.0 | Cloud native (already defined) + **K8s/Helm/CDK deployment**, **BYOC self-hosted model** |
+
+### What NexusPay Already Has (on par or ahead)
+
+- DDD domain model design (aggregates, value objects, domain services) — Hyperswitch is procedural Rust
+- JWT + API Key dual-channel auth with merchant tenant checks
+- MFA (TOTP) support
+- Outbox pattern for transactional webhook delivery
+- Separate merchant dashboard + admin portal (Vue 3)
+- Payment Links (`/pub/pay/{token}`)
+- 3 frontend projects (dashboard, admin, Elements SDK) vs Hyperswitch's single Control Center
+- Java/Spring ecosystem — larger talent pool than Rust for enterprise teams
+
+---
+
 ## Immediate Next Steps
 
 1. Switch local build/runtime to JDK 17.
 2. Run `mvn -DskipTests compile`.
 3. Fix any SDK signature issues surfaced by the compile pass.
-4. Run service tests and add missing auth/provider regression tests.
-5. Continue with admin auth and permission-backed RBAC.
+4. Run `mvn -pl nexuspay-service -Dtest=VaultServiceTest test`.
+5. Run service tests and add missing auth/provider regression tests.

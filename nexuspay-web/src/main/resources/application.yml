@@ -36,6 +36,10 @@ jwt:
 security:
   encryption:
     key: 
+  vault:
+    master-key: 
+    custodian-key: 
+    key-id: local-v1
 
 logging:
   level:

@@ -30,6 +30,24 @@ public class PaymentIntentAggregate {
         this.manualCapture = manualCapture;
         this.status = PaymentStatus.REQUIRES_PAYMENT_METHOD;
     }
+
+    /**
+     * Reconstruct an aggregate from persisted state without triggering
+     * state transitions or emitting domain events.
+     */
+    public static PaymentIntentAggregate reconstruct(UUID id, UUID merchantId, Money amount,
+                                                      String idempotencyKey, boolean manualCapture,
+                                                      PaymentStatus status, ProviderType resolvedProvider,
+                                                      UUID connectorAccountId, String providerPaymentId,
+                                                      String paymentMethodType) {
+        PaymentIntentAggregate agg = new PaymentIntentAggregate(id, merchantId, amount, idempotencyKey, manualCapture);
+        agg.status = status;
+        agg.resolvedProvider = resolvedProvider;
+        agg.connectorAccountId = connectorAccountId;
+        agg.providerPaymentId = providerPaymentId;
+        agg.paymentMethodType = paymentMethodType;
+        return agg;
+    }
     
     public void confirm(String paymentMethodType, ProviderType provider, UUID connectorAccountId) {
         if (!status.canConfirm()) {

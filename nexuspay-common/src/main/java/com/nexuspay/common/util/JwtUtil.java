@@ -28,19 +28,33 @@ public class JwtUtil {
     }
     
     public String generateAccessToken(UUID userId, String email) {
+        return generateAccessToken(userId, email, "ROLE_USER");
+    }
+
+    public String generateAccessToken(UUID userId, String email, String role) {
         return Jwts.builder()
                 .subject(userId.toString())
                 .claim("email", email)
+                .claim("role", role)
                 .claim("type", "access")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .signWith(getSigningKey())
                 .compact();
     }
-    
+
+    public String generateAdminAccessToken(UUID userId, String email) {
+        return generateAccessToken(userId, email, "ROLE_ADMIN");
+    }
+
     public String generateRefreshToken(UUID userId) {
+        return generateRefreshToken(userId, "ROLE_USER");
+    }
+
+    public String generateRefreshToken(UUID userId, String role) {
         return Jwts.builder()
                 .subject(userId.toString())
+                .claim("role", role)
                 .claim("type", "refresh")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
@@ -71,5 +85,13 @@ public class JwtUtil {
 
     public boolean isAccessToken(String token) {
         return "access".equals(parseToken(token).get("type", String.class));
+    }
+
+    public String getRole(String token) {
+        return parseToken(token).get("role", String.class);
+    }
+
+    public boolean isAdminToken(String token) {
+        return "ROLE_ADMIN".equals(getRole(token));
     }
 }

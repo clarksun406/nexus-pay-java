@@ -35,6 +35,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
+        // Admin paths are handled by AdminJwtFilter
+        if (request.getRequestURI().startsWith("/api/v1/admin/")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         String header = request.getHeader("Authorization");
         if (header == null || !header.startsWith("Bearer ") || header.startsWith("Bearer sk_")) {
             chain.doFilter(request, response);

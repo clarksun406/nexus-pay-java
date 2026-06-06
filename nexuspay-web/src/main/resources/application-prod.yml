@@ -20,6 +20,10 @@ jwt:
 security:
   encryption:
     key: 
+  vault:
+    master-key: 
+    custodian-key: 
+    key-id: 
 
 logging:
   level:

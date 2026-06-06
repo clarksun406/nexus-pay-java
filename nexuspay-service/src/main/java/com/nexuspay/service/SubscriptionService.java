@@ -5,6 +5,7 @@ import com.nexuspay.domain.entity.Customer;
 import com.nexuspay.domain.entity.PaymentIntent;
 import com.nexuspay.domain.entity.PaymentMethod;
 import com.nexuspay.domain.entity.Subscription;
+import com.nexuspay.domain.service.SubscriptionDomainService;
 import com.nexuspay.repository.CustomerRepository;
 import com.nexuspay.repository.PaymentMethodRepository;
 import com.nexuspay.repository.SubscriptionRepository;
@@ -14,9 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,6 +26,8 @@ public class SubscriptionService {
     private final CustomerRepository customerRepository;
     private final PaymentMethodRepository paymentMethodRepository;
     private final PaymentIntentService paymentIntentService;
+    private final SubscriptionDomainService subscriptionDomainService;
+    private final InvoiceService invoiceService;
     
     @Transactional
     public Subscription create(UUID merchantId, CreateRequest req) {
@@ -161,6 +161,8 @@ public class SubscriptionService {
         if (confirmed.getStatus() == PaymentIntent.PaymentStatus.SUCCEEDED) {
             subscription.setStatus(Subscription.SubscriptionStatus.ACTIVE);
             calculateNextPeriod(subscription);
+            // Auto-generate invoice for successful renewal
+            invoiceService.createFromSubscription(subscription, confirmed, "subscription_cycle");
         } else {
             subscription.setStatus(Subscription.SubscriptionStatus.PAST_DUE);
         }
@@ -168,19 +170,10 @@ public class SubscriptionService {
     }
     
     private void calculateNextPeriod(Subscription subscription) {
-        Instant now = Instant.now();
-        subscription.setCurrentPeriodStart(now);
-
-        int intervalCount = subscription.getIntervalCount();
-        ZonedDateTime current = now.atZone(ZoneOffset.UTC);
-        ZonedDateTime next = switch (subscription.getInterval()) {
-            case DAY -> current.plusDays(intervalCount);
-            case WEEK -> current.plusWeeks(intervalCount);
-            case MONTH -> current.plusMonths(intervalCount);
-            case YEAR -> current.plusYears(intervalCount);
-        };
-
-        subscription.setCurrentPeriodEnd(next.toInstant());
+        var period = subscriptionDomainService.calculateNextPeriod(
+                Instant.now(), subscription.getInterval().name(), subscription.getIntervalCount());
+        subscription.setCurrentPeriodStart(period.start());
+        subscription.setCurrentPeriodEnd(period.end());
     }
     
     public record CreateRequest(

@@ -12,15 +12,21 @@ public class ConnectorAggregate {
     private final UUID merchantId;
     private final ProviderType provider;
     private final String label;
+    private final String mode;
     private int weight;
     private boolean primary;
     private ConnectorStatus status;
     
     public ConnectorAggregate(UUID id, UUID merchantId, ProviderType provider, String label) {
+        this(id, merchantId, provider, label, "TEST");
+    }
+
+    public ConnectorAggregate(UUID id, UUID merchantId, ProviderType provider, String label, String mode) {
         this.id = id;
         this.merchantId = merchantId;
         this.provider = provider;
         this.label = label;
+        this.mode = mode;
         this.weight = 1;
         this.status = ConnectorStatus.ACTIVE;
     }

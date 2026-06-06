@@ -46,6 +46,7 @@ export class CardElement extends Element {
       type: 'nexuspay:config',
       payload: {
         publishableKey: this.config.publishableKey,
+        apiBase: this.config.apiBase,
         style: this.options.style,
         locale: this.config.locale,
       },

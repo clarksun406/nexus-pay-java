@@ -1,92 +1,68 @@
 package com.nexuspay.service;
 
+import com.nexuspay.domain.aggregate.connector.ConnectorAggregate;
 import com.nexuspay.domain.entity.PaymentIntent;
 import com.nexuspay.domain.entity.ProviderAccount;
-import com.nexuspay.domain.entity.RoutingRule;
+import com.nexuspay.domain.service.RoutingDomainService;
+import com.nexuspay.domain.valueobject.Money;
+import com.nexuspay.domain.valueobject.RoutingCriteria;
 import com.nexuspay.repository.ProviderAccountRepository;
-import com.nexuspay.repository.RoutingRuleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.UUID;
 
+/**
+ * Thin application-layer facade over {@link RoutingDomainService}.
+ * Delegates all routing logic to the domain layer; only handles
+ * credential lookups needed by downstream {@link ProviderDispatcher}.
+ */
 @Service
 @RequiredArgsConstructor
 public class RoutingEngine {
-    
-    private final RoutingRuleRepository routingRuleRepository;
+
+    private final RoutingDomainService routingDomainService;
     private final ProviderAccountRepository providerAccountRepository;
-    
-    public RoutingResult resolve(UUID merchantId, BigInteger amount, String currency, 
+
+    public RoutingResult resolve(UUID merchantId, BigInteger amount, String currency,
                                  String countryCode, String paymentMethodType, PaymentIntent.Mode mode) {
-        
-        List<RoutingRule> rules = routingRuleRepository.findByMerchantIdAndEnabledTrueOrderByPriorityAsc(merchantId);
-        
-        for (RoutingRule rule : rules) {
-            if (matches(rule, amount, currency, countryCode, paymentMethodType)) {
-                ProviderAccount primary = resolveAccount(rule.getTargetAccountId(), mode);
-                if (primary == null) continue;
-                
-                ProviderAccount fallback = rule.getFallbackAccountId() != null 
-                        ? resolveAccount(rule.getFallbackAccountId(), mode) 
-                        : null;
-                
-                return new RoutingResult(primary, fallback);
-            }
-        }
-        
-        return resolveAnyAccount(merchantId, mode);
+        RoutingCriteria criteria = new RoutingCriteria(
+                merchantId,
+                Money.of(amount, currency),
+                countryCode,
+                paymentMethodType,
+                mode != null ? mode.name() : null,
+                null);
+
+        RoutingDomainService.RoutingResult domainResult = routingDomainService.resolve(criteria);
+        if (domainResult == null) return null;
+
+        ProviderAccount primary = domainResult.primary() != null
+                ? lookupAccount(domainResult.primary().getId()) : null;
+        ProviderAccount fallback = domainResult.fallback() != null
+                ? lookupAccount(domainResult.fallback().getId()) : null;
+
+        return new RoutingResult(primary, fallback);
     }
-    
-    public ProviderAccount resolveAnyAccount(UUID merchantId, PaymentIntent.Mode mode) {
-        List<ProviderAccount> accounts = providerAccountRepository
-                .findByMerchantIdAndModeAndStatus(merchantId, mode, ProviderAccount.ConnectorStatus.ACTIVE);
-        
-        if (accounts.isEmpty()) return null;
-        
-        Optional<ProviderAccount> primary = accounts.stream().filter(a -> a.getIsPrimary()).findFirst();
-        return primary.orElseGet(() -> weightedSelect(accounts));
+
+    public RoutingResult resolveAnyAccount(UUID merchantId, PaymentIntent.Mode mode) {
+        RoutingCriteria criteria = new RoutingCriteria(
+                merchantId, null, null, null,
+                mode != null ? mode.name() : null, null);
+
+        RoutingDomainService.RoutingResult domainResult = routingDomainService.resolve(criteria);
+        if (domainResult == null) return null;
+
+        ProviderAccount primary = domainResult.primary() != null
+                ? lookupAccount(domainResult.primary().getId()) : null;
+
+        return new RoutingResult(primary, null);
     }
-    
-    private boolean matches(RoutingRule rule, BigInteger amount, String currency, 
-                           String countryCode, String paymentMethodType) {
-        if (rule.getCurrencies() != null && !Arrays.asList(rule.getCurrencies().split(",")).contains(currency)) {
-            return false;
-        }
-        if (rule.getAmountMin() != null && amount.compareTo(rule.getAmountMin()) < 0) {
-            return false;
-        }
-        if (rule.getAmountMax() != null && amount.compareTo(rule.getAmountMax()) > 0) {
-            return false;
-        }
-        if (rule.getCountryCodes() != null && countryCode != null 
-                && !Arrays.asList(rule.getCountryCodes().split(",")).contains(countryCode)) {
-            return false;
-        }
-        if (rule.getPaymentMethodTypes() != null && paymentMethodType != null 
-                && !Arrays.asList(rule.getPaymentMethodTypes().split(",")).contains(paymentMethodType)) {
-            return false;
-        }
-        return true;
+
+    private ProviderAccount lookupAccount(UUID accountId) {
+        return providerAccountRepository.findById(accountId).orElse(null);
     }
-    
-    private ProviderAccount resolveAccount(UUID accountId, PaymentIntent.Mode mode) {
-        return providerAccountRepository.findById(accountId)
-                .filter(a -> a.getStatus() == ProviderAccount.ConnectorStatus.ACTIVE)
-                .filter(a -> a.getMode() == mode || mode == null)
-                .orElse(null);
-    }
-    
-    private ProviderAccount weightedSelect(List<ProviderAccount> accounts) {
-        int totalWeight = accounts.stream().mapToInt(ProviderAccount::getWeight).sum();
-        int pick = new Random().nextInt(totalWeight);
-        for (ProviderAccount account : accounts) {
-            pick -= account.getWeight();
-            if (pick < 0) return account;
-        }
-        return accounts.get(accounts.size() - 1);
-    }
-    
+
     public record RoutingResult(ProviderAccount primary, ProviderAccount fallback) {}
 }

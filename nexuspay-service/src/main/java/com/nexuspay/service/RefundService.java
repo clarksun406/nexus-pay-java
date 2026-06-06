@@ -4,6 +4,8 @@ import com.nexuspay.common.exception.BusinessException;
 import com.nexuspay.domain.entity.PaymentIntent;
 import com.nexuspay.domain.entity.ProviderAccount;
 import com.nexuspay.domain.entity.Refund;
+import com.nexuspay.domain.service.RefundDomainService;
+import com.nexuspay.domain.valueobject.PaymentStatus;
 import com.nexuspay.repository.PaymentIntentRepository;
 import com.nexuspay.repository.RefundRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ public class RefundService {
     private final RefundRepository refundRepository;
     private final PaymentIntentRepository paymentIntentRepository;
     private final ProviderDispatcher providerDispatcher;
+    private final RefundDomainService refundDomainService;
     
     @Transactional
     public Refund create(UUID merchantId, CreateRefundRequest req) {
@@ -32,16 +35,20 @@ public class RefundService {
             throw new BusinessException("Payment intent not found", HttpStatus.NOT_FOUND);
         }
         
-        if (intent.getStatus() != PaymentIntent.PaymentStatus.SUCCEEDED) {
-            throw new BusinessException("Payment not succeeded", HttpStatus.BAD_REQUEST);
+        // Domain-layer validation
+        try {
+            refundDomainService.validateRefundable(
+                    PaymentStatus.valueOf(intent.getStatus().name()),
+                    intent.getProviderPaymentId());
+        } catch (IllegalStateException e) {
+            throw new BusinessException(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
-        if (intent.getProviderPaymentId() == null || intent.getConnectorAccountId() == null || intent.getResolvedProvider() == null) {
-            throw new BusinessException("Payment has no provider charge to refund", HttpStatus.BAD_REQUEST);
-        }
-        
-        BigInteger refundAmount = req.amount() != null ? req.amount() : intent.getAmount();
-        if (refundAmount.compareTo(BigInteger.ZERO) <= 0 || refundAmount.compareTo(intent.getAmount()) > 0) {
-            throw new BusinessException("Invalid refund amount", HttpStatus.BAD_REQUEST);
+
+        BigInteger refundAmount;
+        try {
+            refundAmount = refundDomainService.validateRefundAmount(req.amount(), intent.getAmount());
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
         
         Refund refund = new Refund();

@@ -8,6 +8,8 @@
         <router-link to="/overview" class="block px-3 py-2 rounded hover:bg-gray-800">Overview</router-link>
         <router-link to="/payments" class="block px-3 py-2 rounded hover:bg-gray-800">Payments</router-link>
         <router-link to="/refunds" class="block px-3 py-2 rounded hover:bg-gray-800">Refunds</router-link>
+        <router-link to="/customers" class="block px-3 py-2 rounded hover:bg-gray-800">Customers</router-link>
+        <router-link to="/subscriptions" class="block px-3 py-2 rounded hover:bg-gray-800">Subscriptions</router-link>
         <router-link to="/routing/rules" class="block px-3 py-2 rounded hover:bg-gray-800">Routing Rules</router-link>
         <router-link to="/connectors" class="block px-3 py-2 rounded hover:bg-gray-800">Connectors</router-link>
         <router-link to="/payment-links" class="block px-3 py-2 rounded hover:bg-gray-800">Payment Links</router-link>

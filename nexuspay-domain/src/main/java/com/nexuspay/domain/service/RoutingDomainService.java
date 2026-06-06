@@ -20,18 +20,20 @@ public class RoutingDomainService {
     private final ConnectorRepository connectorRepository;
     
     public RoutingResult resolve(RoutingCriteria criteria) {
-        List<RoutingRuleAggregate> rules = routingRuleRepository.findByMerchantIdOrderByPriority(null);
+        List<RoutingRuleAggregate> rules = routingRuleRepository.findByMerchantIdOrderByPriority(criteria.merchantId());
         
         for (RoutingRuleAggregate rule : rules) {
             if (rule.matches(criteria)) {
                 ConnectorAggregate primary = connectorRepository.findById(rule.getTargetAccountId())
-                        .filter(ConnectorAggregate::isAvailable).orElse(null);
+                        .filter(c -> c.isAvailable() && matchesMode(c, criteria.mode()))
+                        .orElse(null);
                 
                 if (primary == null) continue;
                 
                 ConnectorAggregate fallback = rule.getFallbackAccountId() != null
                         ? connectorRepository.findById(rule.getFallbackAccountId())
-                                .filter(ConnectorAggregate::isAvailable).orElse(null)
+                                .filter(c -> c.isAvailable() && matchesMode(c, criteria.mode()))
+                                .orElse(null)
                         : null;
                 
                 return new RoutingResult(primary, fallback);
@@ -41,10 +43,15 @@ public class RoutingDomainService {
         return resolveAnyConnector(criteria);
     }
     
+    private boolean matchesMode(ConnectorAggregate connector, String mode) {
+        return mode == null || connector.getMode().equalsIgnoreCase(mode);
+    }
+    
     private RoutingResult resolveAnyConnector(RoutingCriteria criteria) {
-        List<ConnectorAggregate> connectors = connectorRepository.findByMerchantId(null);
+        List<ConnectorAggregate> connectors = connectorRepository.findByMerchantId(criteria.merchantId());
         List<ConnectorAggregate> available = connectors.stream()
-                .filter(ConnectorAggregate::isAvailable).toList();
+                .filter(c -> c.isAvailable() && matchesMode(c, criteria.mode()))
+                .toList();
         
         if (available.isEmpty()) return null;
         

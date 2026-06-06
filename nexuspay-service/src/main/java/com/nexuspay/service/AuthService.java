@@ -27,6 +27,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final CryptoUtil cryptoUtil;
+    private final EmailService emailService;
     
     @Transactional
     public AuthResponse register(RegisterRequest req) {
@@ -54,6 +55,8 @@ public class AuthService {
         merchantUser.setRole(MerchantUser.Role.OWNER);
         merchantUser.setStatus(MerchantUser.MemberStatus.ACTIVE);
         merchantUserRepository.save(merchantUser);
+        
+        emailService.sendWelcomeEmail(user.getEmail(), merchant.getName());
         
         return buildAuthResponse(user, merchant);
     }

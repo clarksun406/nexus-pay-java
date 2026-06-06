@@ -1,55 +1,59 @@
 package com.nexuspay.service;
 
+import com.nexuspay.domain.aggregate.connector.ConnectorAggregate;
+import com.nexuspay.domain.entity.PaymentIntent;
 import com.nexuspay.domain.entity.ProviderAccount;
+import com.nexuspay.domain.service.RoutingDomainService;
+import com.nexuspay.domain.valueobject.ProviderType;
 import com.nexuspay.repository.ProviderAccountRepository;
-import com.nexuspay.repository.RoutingRuleRepository;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
-import java.math.BigInteger;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class RoutingEngineTest {
-    
-    @Mock private RoutingRuleRepository routingRuleRepository;
+class RoutingEngineIntegrationTest {
+
+    @Mock private RoutingDomainService routingDomainService;
     @Mock private ProviderAccountRepository providerAccountRepository;
-    
+
     @InjectMocks private RoutingEngine routingEngine;
-    
+
     @BeforeEach
     void setup() { MockitoAnnotations.openMocks(this); }
-    
+
     @Test
-    void shouldResolveAnyAccount() {
+    void shouldResolveViaDomainService() {
         UUID merchantId = UUID.randomUUID();
-        
+        UUID accountId = UUID.randomUUID();
+
+        var aggregate = new ConnectorAggregate(accountId, merchantId, ProviderType.STRIPE, "stripe-1", "TEST");
+        var domainResult = new RoutingDomainService.RoutingResult(aggregate, null);
+
+        when(routingDomainService.resolve(any())).thenReturn(domainResult);
+
         var account = new ProviderAccount();
-        account.setId(UUID.randomUUID());
+        account.setId(accountId);
         account.setProvider(ProviderAccount.Provider.STRIPE);
-        account.setIsPrimary(true);
-        account.setStatus(ProviderAccount.ConnectorStatus.ACTIVE);
-        
-        when(providerAccountRepository.findByMerchantIdAndModeAndStatus(
-            merchantId, PaymentIntent.Mode.TEST, ProviderAccount.ConnectorStatus.ACTIVE))
-            .thenReturn(List.of(account));
-        
-        var result = routingEngine.resolveAnyAccount(merchantId, PaymentIntent.Mode.TEST);
-        
+        when(providerAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+
+        var result = routingEngine.resolve(merchantId, java.math.BigInteger.valueOf(1000), "usd",
+                null, "card", PaymentIntent.Mode.TEST);
+
         assertNotNull(result);
-        assertEquals(account.getId(), result.getId());
+        assertNotNull(result.primary());
+        assertEquals(accountId, result.primary().getId());
     }
-    
+
     @Test
-    void shouldReturnNullWhenNoAccounts() {
+    void shouldReturnNullWhenNoRoute() {
         UUID merchantId = UUID.randomUUID();
-        
-        when(providerAccountRepository.findByMerchantIdAndModeAndStatus(
-            merchantId, PaymentIntent.Mode.TEST, ProviderAccount.ConnectorStatus.ACTIVE))
-            .thenReturn(Collections.emptyList());
-        
-        var result = routingEngine.resolveAnyAccount(merchantId, PaymentIntent.Mode.TEST);
-        
+
+        when(routingDomainService.resolve(any())).thenReturn(null);
+
+        var result = routingEngine.resolve(merchantId, java.math.BigInteger.valueOf(1000), "usd",
+                null, "card", PaymentIntent.Mode.TEST);
+
         assertNull(result);
     }
 }

@@ -25,6 +25,7 @@ public class PasswordResetService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final CryptoUtil cryptoUtil;
+    private final EmailService emailService;
 
     @Transactional
     public PasswordResetRequestResponse requestReset(String email) {
@@ -46,8 +47,9 @@ public class PasswordResetService {
         token.setUsed(false);
         passwordResetTokenRepository.save(token);
 
-        // NOTE: In production this token should be sent via email, not returned.
-        return new PasswordResetRequestResponse(true, rawToken);
+        emailService.sendPasswordResetEmail(user.getEmail(), rawToken);
+
+        return new PasswordResetRequestResponse(true, null);
     }
 
     @Transactional
