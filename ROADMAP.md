@@ -173,6 +173,56 @@ Verification notes:
 - `mvn -pl nexuspay-service -am -Dtest=VaultServiceTest '-Dsurefire.failIfNoSpecifiedTests=false' test` passes: 4 tests, 0 failures.
 - Full backend `mvn test` passes with `JAVA_HOME=D:\Java\jdk-17`: 134 tests, 0 failures.
 
+## v1.9.0 - Digital Currency Payment Processing (Crypto Acquiring)
+
+Priority: low.
+
+Enable merchants to accept cryptocurrency payments alongside fiat.
+
+### Architecture Decision
+
+Digital currency payments will be implemented as **separate Maven modules within the same repository**, sharing `nexuspay-common` infrastructure (auth, encryption, rate limiting, observability) but maintaining independent domain models. The crypto payment lifecycle (wallet address generation, blockchain confirmation polling, gas fee estimation) is fundamentally different from fiat card payments and should not be forced into the existing `PaymentProvider` abstraction.
+
+### Module Structure
+
+```
+nexuspay-crypto-domain/     # CryptoPayment aggregate, wallet address VO, confirmation state machine
+nexuspay-crypto-infra/      # Chain adapters (Ethereum JSON-RPC, Tron gRPC, Solana RPC)
+nexuspay-crypto-web/        # REST API: /api/v1/crypto-payments, webhook callbacks
+```
+
+### Frontend
+
+The existing Elements SDK framework (`Nexuspay` entry, `Elements` manager, `Element` base class, event system, publishable-key auth) is 100% reusable. New components will be added as peer modules rather than `Element` subclasses — crypto does not need embedded iframe card input; it needs payment-request display components (QR code, wallet address, confirmation countdown).
+
+```
+@nexuspay/core/       # shared (Nexuspay entry, auth, events)
+@nexuspay/elements/   # fiat only (unchanged)
+@nexuspay/crypto/     # new: CryptoPayment, WalletConnector, ConfirmationPoller
+```
+
+### Key Differences from Fiat
+
+| Dimension | Fiat (existing) | Crypto (new) |
+|-----------|----------------|--------------|
+| Payment action | Embedded iframe card input | External wallet app |
+| Confirmation | Instant (seconds) | Block confirmations (minutes) |
+| Refunds | Provider API | On-chain reverse transfer |
+| Disputes | Chargeback process | Irreversible |
+| Fees | Fixed provider rates | Dynamic gas fees |
+| Key model | API Key/Secret | Private key / HSM |
+
+### Phased Implementation
+
+| Sub-version | Content |
+|-------------|---------|
+| v1.9.0 | `nexuspay-crypto-domain`: `CryptoPayment` aggregate, `CryptoAddress` VO, confirmation state machine |
+| v1.9.1 | `nexuspay-crypto-infra`: Ethereum adapter (JSON-RPC), USDT/USDC ERC-20 support |
+| v1.9.2 | `nexuspay-crypto-web`: `/api/v1/crypto-payments` endpoints, address generation, block confirmation webhooks |
+| v1.9.3 | Multi-chain: Tron (TRC-20), Solana, BSC |
+| v1.9.4 | Frontend: `@nexuspay/crypto` components, WalletConnect integration |
+| v1.9.5 | Dashboard unification: fiat + crypto payment list, exchange rate management, gas fee strategy |
+
 ## v2.0.0 - Enterprise Features
 
 Priority: future.
@@ -212,12 +262,13 @@ Comparison against [Hyperswitch](https://github.com/juspay/hyperswitch) (juspay,
 | 8 | **APM Widget** | Embeddable APM widgets, Klarna/WeChat/Alipay/Affirm etc. | Basic Elements SDK skeleton (Card/Payment/ApplePay/GooglePay/Alipay/WeChat) | **Medium** |
 | 9 | **3-Way Reconciliation** | 2-way + 3-way, backdated support, staggered scheduling, customizable outputs | Basic 2-way provider status comparison | **Medium** |
 | 10 | **Fraud/Risk Integration** | Downstream-of-risk-engine integration pattern | None | **Major** |
-| 11 | **Redis Infrastructure** | Redis for caching + job queuing (Scheduler Producer/Consumer) | Not implemented (roadmap mention only) | **Medium** |
-| 12 | **Observability Stack** | OTel traces, Prometheus metrics, Loki logs, Tempo tracing, Grafana dashboards — all production-ready | Not implemented (roadmap mention only) | **Medium** |
+| 11 | **Redis Infrastructure** | Redis for caching + job queuing (Scheduler Producer/Consumer) | Implemented v1.3.0: RedisRateLimiter with fail-open, optional dependency | **Low** - production queuing not yet implemented |
+| 12 | **Observability Stack** | OTel traces, Prometheus metrics, Loki logs, Tempo tracing, Grafana dashboards — all production-ready | Implemented v1.3.0: PaymentMetrics (Prometheus), OTel tracing bridge, /actuator/prometheus | **Medium** - Grafana dashboards and Loki/Tempo not yet configured |
 | 13 | **K8s/Cloud Deployment** | Helm charts, AWS CDK, BYOC self-hosted model | docker-compose only | **Medium** |
 | 14 | **Control Center** | Full hosted sandbox, connector config UI, routing rules UI, logs viewer, retry config UI | Separate Vue dashboards (merchant + admin), partial coverage | **Medium** |
 | 15 | **PCI DSS / GDPR Compliance** | Built-in: PCI DSS L1 vault, GDPR PII storage, data retention | Not implemented (v2.0.0 roadmap mention) | **Major** |
 | 16 | **3DS / SCA** | Automatic 3DS challenge handling, frictionless + challenge flows | Basic 3DS skeleton, action URL field only | **Medium** |
+| 17 | **Crypto Acquiring** | None | Planned v1.9.0: independent modules for Ethereum/Tron/Solana, WalletConnect, dashboard unification | **Low** - future, lowest priority |
 
 ### Priority Roadmap Integration
 
@@ -234,6 +285,7 @@ Based on the gap analysis, the following should be prioritized in future version
 | **v1.6.0 (new)** | **Smart Retries & Revenue Recovery**: ML-powered retry engine, categorized error handling (cascading/step-up/clear PAN/global network), error code DB, configurable strategies per subscription/payment method |
 | **v1.7.0 (new)** | **Cost Observability**: per-provider/per-method/per-region cost breakdown, invoice auditing, interchange downgrade detection, PSP markup transparency |
 | **v1.8.0 (new)** | **Network Tokenization**: Visa/MC network token provisioning, 3 integration flows, cryptogram management |
+| **v1.9.0 (new)** | **Crypto Acquiring**: independent modules (nexuspay-crypto-*), Ethereum/Tron/Solana chain adapters, WalletConnect frontend, dashboard unification. Lowest priority. |
 | v2.0.0 | Enterprise (already defined) + **Fraud/Risk engine integration**, **3-way reconciliation**, **PCI/GDPR compliance hardening** |
 | v3.0.0 | Cloud native (already defined) + **K8s/Helm/CDK deployment**, **BYOC self-hosted model** |
 
@@ -252,7 +304,6 @@ Based on the gap analysis, the following should be prioritized in future version
 
 ## Immediate Next Steps
 
-1. Repair or regenerate the Maven wrapper.
-2. Add provider contract tests for refund/status/webhook state transitions.
-3. Add missing auth/provider regression tests.
-4. Continue v1.6.0 Smart Retries planning and implementation.
+1. Continue v1.4.0: Add PayPal provider support.
+2. Continue v1.6.0: Smart Retries planning and implementation.
+3. Plan v1.9.0: Crypto acquiring architecture review.
