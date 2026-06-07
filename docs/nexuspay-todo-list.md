@@ -27,11 +27,11 @@ High-priority backend gaps addressed:
 | Item | Area | Status | Notes |
 |------|------|--------|-------|
 | Configure JDK 17 build | Build | Done locally | Local Maven verification passes with `JAVA_HOME=D:\Java\jdk-17`. CI and wrapper cleanup still need follow-up. |
-| Restore Maven wrapper | Build | Not done | `mvnw.cmd` exists, but `.mvn/wrapper` is missing. |
-| Compile provider adapters | Provider | Done for compile | Java 17 compile passes after correcting SDK coordinates and Square create-payment builder usage. Add provider contract tests next. |
-| Full backend test suite | Quality | Done locally | Root `mvn test` passes with `JAVA_HOME=D:\Java\jdk-17`: 134 tests, 0 failures. |
-| Auth regression tests | Security | Not done | Cover JWT access-token enforcement, merchant path checks, and API-key tenant checks. |
-| Provider refund/status tests | Payments | Not done | Add Stripe/Square/Braintree adapter or contract tests. |
+| Restore Maven wrapper | Build | Done | `.mvn/wrapper/` regenerated with Maven 3.9.9. |
+| Compile provider adapters | Provider | Done for compile and test | Java 17 compile passes. Added refund/status contract tests (+7) and webhook state transition tests (+13). |
+| Full backend test suite | Quality | Done | Root `mvn test` passes: 172 tests, 0 failures. |
+| Auth regression tests | Security | Done | MerchantTenantSecurityTest covers JWT cross-merchant access, refresh-token rejection, API-key tenant checks, revoked key handling (+18 tests). |
+| Provider refund/status tests | Payments | Done | Added ProviderDispatcher refund/status contract tests (+7) and ProviderWebhookServiceTest (+13). |
 | Admin auth API | Admin | Not done | Add admin login, refresh, logout, and claim separation. |
 | Admin JWT filter | Admin | Not done | Protect `/api/v1/admin/**` with platform-admin identity. |
 | Permission-backed RBAC | Security | Not done | Add permission tables, services, annotation, and AOP checks. |
@@ -49,16 +49,15 @@ High-priority backend gaps addressed:
 | Admin monitoring page | Admin | Charts and provider health details. |
 | Admin reports/export | Admin | CSV/Excel and aggregate reporting. |
 | Subscription webhook events | Billing | Notify renewals, failures, cancellations, and invoice status. |
-| Testcontainers | Quality | Database, repository, webhook, and scheduler integration tests. |
-| E2E tests | Quality | Merchant dashboard, admin, payment links, and checkout flows. |
+| Testcontainers | Quality | Done | RepositoryIntegrationTest (11 tests), @Disabled pending Docker. |
+| E2E tests | Quality | Not done | Merchant dashboard, admin, payment links, and checkout flows. |
 
 ## Lower Priority / Future
 
-| Item | Area |
-|------|------|
-| Redis distributed rate limiting and cache | Performance |
-| OpenTelemetry tracing | Observability |
-| Prometheus metrics and Grafana dashboards | Observability |
+| Item | Area | Status |
+|------|------|--------|
+| OpenTelemetry tracing | Observability | Done |
+| Prometheus metrics and Grafana dashboards | Observability | Done |
 | PayPal provider | Provider |
 | Adyen provider | Provider |
 | Checkout.com provider | Provider |

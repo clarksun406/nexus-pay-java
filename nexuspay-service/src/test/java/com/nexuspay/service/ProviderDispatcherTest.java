@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -169,5 +170,140 @@ class ProviderDispatcherTest {
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
         assertEquals("Provider account not found", ex.getMessage());
+    }
+
+    // ---- refund contract tests ----
+
+    @Test
+    void shouldDelegateRefundToStripeProvider() {
+        UUID accountId = UUID.randomUUID();
+        ProviderAccount account = new ProviderAccount();
+        account.setId(accountId);
+
+        BigInteger amount = BigInteger.valueOf(500);
+        PaymentProvider.RefundResult expected =
+                new PaymentProvider.RefundResult(true, "re_123", "{\"status\":\"succeeded\"}", null, null);
+
+        when(providerAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(stripeProvider.refund("pi_1", amount, "USD", null, account)).thenReturn(expected);
+
+        PaymentProvider.RefundResult result = providerDispatcher.refund(
+                ProviderAccount.Provider.STRIPE, "pi_1", amount, "USD", null, accountId);
+
+        assertEquals(expected, result);
+        verify(stripeProvider).refund("pi_1", amount, "USD", null, account);
+    }
+
+    @Test
+    void shouldDelegateRefundToSquareProvider() {
+        UUID accountId = UUID.randomUUID();
+        ProviderAccount account = new ProviderAccount();
+        account.setId(accountId);
+
+        BigInteger amount = BigInteger.valueOf(1000);
+        PaymentProvider.RefundResult expected =
+                new PaymentProvider.RefundResult(true, "sq_re_1", "{\"status\":\"COMPLETED\"}", null, null);
+
+        when(providerAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(squareProvider.refund("sq_pay_1", amount, "USD", null, account)).thenReturn(expected);
+
+        PaymentProvider.RefundResult result = providerDispatcher.refund(
+                ProviderAccount.Provider.SQUARE, "sq_pay_1", amount, "USD", null, accountId);
+
+        assertEquals(expected, result);
+        verify(squareProvider).refund("sq_pay_1", amount, "USD", null, account);
+    }
+
+    @Test
+    void shouldThrowBadRequestWhenRefundProviderMissing() {
+        UUID accountId = UUID.randomUUID();
+        when(providerAccountRepository.findById(accountId)).thenReturn(Optional.of(new ProviderAccount()));
+
+        ProviderDispatcher dispatcherWithoutInit = new ProviderDispatcher(
+                providerAccountRepository,
+                List.of()
+        );
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> dispatcherWithoutInit.refund(ProviderAccount.Provider.STRIPE, "pi_1",
+                        BigInteger.ONE, "USD", null, accountId));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertTrue(ex.getMessage().contains("Unsupported provider"));
+    }
+
+    @Test
+    void shouldThrowBadRequestWhenRefundNotSupported() {
+        UUID accountId = UUID.randomUUID();
+        ProviderAccount account = new ProviderAccount();
+        account.setId(accountId);
+
+        when(providerAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(stripeProvider.refund(any(), any(), any(), any(), any()))
+                .thenThrow(new UnsupportedOperationException("Refund is not supported for STRIPE"));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> providerDispatcher.refund(ProviderAccount.Provider.STRIPE, "pi_1",
+                        BigInteger.ONE, "USD", null, accountId));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+    }
+
+    // ---- fetchPaymentStatus contract tests ----
+
+    @Test
+    void shouldDelegateFetchPaymentStatusToSquareProvider() {
+        UUID accountId = UUID.randomUUID();
+        ProviderAccount account = new ProviderAccount();
+        account.setId(accountId);
+
+        PaymentProvider.ProviderPaymentStatus expected = new PaymentProvider.ProviderPaymentStatus(
+                "sq_pay_1", PaymentIntent.PaymentStatus.SUCCEEDED,
+                BigInteger.valueOf(2000), "USD", "{\"status\":\"COMPLETED\"}");
+
+        when(providerAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(squareProvider.fetchPaymentStatus("sq_pay_1", account)).thenReturn(expected);
+
+        PaymentProvider.ProviderPaymentStatus result =
+                providerDispatcher.fetchPaymentStatus(ProviderAccount.Provider.SQUARE, "sq_pay_1", accountId);
+
+        assertEquals(expected, result);
+        verify(squareProvider).fetchPaymentStatus("sq_pay_1", account);
+    }
+
+    @Test
+    void shouldDelegateFetchPaymentStatusToBraintreeProvider() {
+        UUID accountId = UUID.randomUUID();
+        ProviderAccount account = new ProviderAccount();
+        account.setId(accountId);
+
+        PaymentProvider.ProviderPaymentStatus expected = new PaymentProvider.ProviderPaymentStatus(
+                "bt_txn_1", PaymentIntent.PaymentStatus.SUCCEEDED,
+                BigInteger.valueOf(3000), "USD", "{\"status\":\"SETTLED\"}");
+
+        when(providerAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(braintreeProvider.fetchPaymentStatus("bt_txn_1", account)).thenReturn(expected);
+
+        PaymentProvider.ProviderPaymentStatus result =
+                providerDispatcher.fetchPaymentStatus(ProviderAccount.Provider.BRAINTREE, "bt_txn_1", accountId);
+
+        assertEquals(expected, result);
+        verify(braintreeProvider).fetchPaymentStatus("bt_txn_1", account);
+    }
+
+    @Test
+    void shouldThrowBadRequestWhenStatusFetchNotSupported() {
+        UUID accountId = UUID.randomUUID();
+        ProviderAccount account = new ProviderAccount();
+        account.setId(accountId);
+
+        when(providerAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(stripeProvider.fetchPaymentStatus(any(), any()))
+                .thenThrow(new UnsupportedOperationException("Status fetch is not supported for STRIPE"));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> providerDispatcher.fetchPaymentStatus(ProviderAccount.Provider.STRIPE, "pi_1", accountId));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
     }
 }

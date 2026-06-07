@@ -28,6 +28,18 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+  # Redis (optional - disabled by default, enable when Redis is available)
+  redis:
+    enabled: false
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 2
+
 jwt:
   secret: 
   access-token-expiration: 900000
@@ -45,3 +57,20 @@ logging:
   level:
     com.nexuspay: DEBUG
     org.springframework.security: INFO
+
+# ---- v1.3.0 Observability ----
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: nexuspay
+  tracing:
+    sampling:
+      probability: 1.0

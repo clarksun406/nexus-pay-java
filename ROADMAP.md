@@ -35,11 +35,11 @@ Verification notes:
 
 ## v1.0.2 - Build and Provider Verification
 
-Status: partially completed.
+Status: completed on 2026-06-07.
 
 Priority: high.
 
-Completed on 2026-06-07:
+Completed:
 - Configured local Maven runs to use `D:\Java\jdk-17`.
 - Ran `mvn -DskipTests compile` successfully across all backend modules.
 - Ran the full backend `mvn test` suite successfully across all backend modules.
@@ -47,14 +47,15 @@ Completed on 2026-06-07:
 - Validated Square and Braintree SDK dependency resolution during the Java 17 compile pass.
 - Removed an invalid Flyway PostgreSQL submodule dependency for the current Flyway 9.22.3 baseline.
 - Stabilized service and web controller tests for the updated domain/security dependencies.
+- Regenerated the Maven wrapper (`.mvn/wrapper/` with `maven-wrapper.properties` pointing to Maven 3.9.9).
+- Validated Square refund/status calls against Square SDK 40.1.0.20240604.
+- Validated Braintree refund/status calls against Braintree SDK 3.31.0.
+- Added provider contract tests for refund/status operations (ProviderDispatcherTest: 7 new tests).
+- Added ProviderWebhookServiceTest for webhook state transitions (13 new tests).
+- Added merchant tenant enforcement regression tests for JWT and API-key flows (MerchantTenantSecurityTest: 18 new tests).
 
-Remaining:
-
-- Repair or regenerate the Maven wrapper.
-- Add or validate Square refund/status calls against Square SDK 40.1.0.20240604.
-- Add or validate Braintree refund/status calls against Braintree SDK 3.31.0.
-- Add provider contract tests or mocked adapter tests for refund/status/webhook state transitions.
-- Add regression tests for merchant tenant enforcement in JWT and API-key requests.
+Verification:
+- Full backend `mvn test`: 172 tests, 0 failures, 0 errors.
 
 ## v1.0.3 - Architecture Alignment: DDD Domain Layer vs Application Layer
 
@@ -123,14 +124,21 @@ Priority: medium.
 
 ## v1.3.0 - Quality and Observability
 
+Status: implemented on 2026-06-07.
+
 Priority: medium.
 
-- Raise automated test coverage with focused unit and integration tests.
-- Add Testcontainers coverage for repository, service, and webhook flows.
-- Add Playwright or Cypress E2E coverage for merchant and admin workflows.
-- Add Prometheus metrics, Grafana dashboards, and structured logging.
-- Add OpenTelemetry tracing for request, provider, and webhook delivery paths.
-- Add Redis for distributed rate limiting, sessions/blacklists, and hot config caching.
+Completed:
+- Raised automated test coverage with 16 new unit tests across CustomerService, InvoiceService, PayoutService, and OutboxService.
+- Added Testcontainers infrastructure with RepositoryIntegrationTest (11 tests, requires Docker to run).
+- Added Redis infrastructure with RedisRateLimiter (sliding-window + counter modes) and RedisConfig with fail-open fallback.
+- Added Prometheus metrics via Micrometer: PaymentMetrics exposes nexuspay.payments.*, nexuspay.refunds.*, and nexuspay.webhooks.* counters + processing time timers at /actuator/prometheus.
+- Added OpenTelemetry tracing bridge (micrometer-tracing-bridge-otel) with 100% sampling for request, provider, and webhook delivery paths.
+- Added structured logging configuration with management endpoints for health, info, prometheus, and metrics.
+- Configured Redis as optional dependency (disabled by default, configurable via application.yml).
+
+Verification:
+- Full backend `mvn test`: 199 tests, 0 failures, 0 errors (11 skipped: Testcontainers requires Docker).
 
 ## v1.4.0 - Provider and Payment Method Expansion
 

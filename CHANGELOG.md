@@ -28,7 +28,25 @@
 ### Verification
 - `mvn -DskipTests compile` passes with `JAVA_HOME=D:\Java\jdk-17`.
 - `mvn -pl nexuspay-service -am -Dtest=VaultServiceTest -Dsurefire.failIfNoSpecifiedTests=false test` passes: 4 tests, 0 failures.
-- Full backend `mvn test` passes with `JAVA_HOME=D:\Java\jdk-17`: 134 tests, 0 failures.
+- Full backend `mvn test` passes with `JAVA_HOME=D:\Java\jdk-17`: 199 tests, 0 failures, 0 errors (11 skipped: Testcontainers requires Docker).
+
+### v1.0.2 Completed (2026-06-07)
+- Regenerated Maven wrapper (`.mvn/wrapper/`, Maven 3.9.9).
+- Validated Square refund/status against SDK 40.1.0.20240604.
+- Validated Braintree refund/status against SDK 3.31.0.
+- Added ProviderDispatcher refund/status contract tests (+7 tests).
+- Added ProviderWebhookServiceTest for webhook state transitions (+13 tests).
+- Added MerchantTenantSecurityTest for JWT/API-key cross-merchant enforcement (+18 tests).
+
+### v1.3.0 Completed (2026-06-07)
+- Added Testcontainers infrastructure with RepositoryIntegrationTest (11 tests, @Disabled pending Docker).
+- Added RedisRateLimiter with sliding-window and counter modes, fail-open on Redis errors.
+- Added RedisConfig with Jackson JSON serialization.
+- Added PaymentMetrics (Micrometer/Prometheus): payment/refund/webhook counters and processing time timers.
+- Added OpenTelemetry tracing bridge with 100% sampling.
+- Added management endpoints for health, info, prometheus, metrics.
+- Added 16 new unit tests: CustomerServiceTest (+5), InvoiceServiceTest (+5), PayoutServiceTest (+4), OutboxServiceTest (+2).
+- Configured Redis as optional dependency (disabled by default).
 
 ---
 
