@@ -10,6 +10,7 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 *_output.txt
 *_compile.txt
+.commit_msg
 
 /frontend-admin/node_modules/
 /frontend-admin/dist/
