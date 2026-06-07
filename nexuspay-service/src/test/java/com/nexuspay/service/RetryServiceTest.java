@@ -1,4 +1,4 @@
-﻿package com.nexuspay.service;
+package com.nexuspay.service;
 
 import com.nexuspay.domain.entity.PaymentIntent;
 import com.nexuspay.domain.entity.PaymentRequest;
@@ -145,7 +145,7 @@ class RetryServiceTest {
         when(declineCodeService.getRetryStrategy("processing_error", 1))
                 .thenReturn(new DeclineCodeService.RetryStrategy(true, 1000L, true));
         when(providerAccountRepository.findByMerchantIdAndModeAndStatus(
-                intent.getMerchantId(), intent.getMode(), ProviderAccount.ConnectorStatus.ACTIVE))
+                intent.getMerchantId(), ProviderAccount.Mode.valueOf(intent.getMode().name()), ProviderAccount.ConnectorStatus.ACTIVE))
                 .thenReturn(List.of(sameAsFailed));
 
         PaymentIntent result = retryService.executeRetry(id);
@@ -176,7 +176,7 @@ class RetryServiceTest {
         when(declineCodeService.getRetryStrategy("processing_error", 1))
                 .thenReturn(new DeclineCodeService.RetryStrategy(true, 1000L, true));
         when(providerAccountRepository.findByMerchantIdAndModeAndStatus(
-                intent.getMerchantId(), intent.getMode(), ProviderAccount.ConnectorStatus.ACTIVE))
+                intent.getMerchantId(), ProviderAccount.Mode.valueOf(intent.getMode().name()), ProviderAccount.ConnectorStatus.ACTIVE))
                 .thenReturn(List.of(failed, fallback));
         when(providerDispatcher.charge(eq(ProviderAccount.Provider.SQUARE), eq(intent), eq("card")))
                 .thenReturn(new PaymentIntentService.ChargeResult(true, "pay_1", "{\"ok\":1}", null, null));
@@ -210,7 +210,7 @@ class RetryServiceTest {
         when(declineCodeService.getRetryStrategy("processing_error", 1))
                 .thenReturn(new DeclineCodeService.RetryStrategy(true, 1000L, true));
         when(providerAccountRepository.findByMerchantIdAndModeAndStatus(
-                intent.getMerchantId(), intent.getMode(), ProviderAccount.ConnectorStatus.ACTIVE))
+                intent.getMerchantId(), ProviderAccount.Mode.valueOf(intent.getMode().name()), ProviderAccount.ConnectorStatus.ACTIVE))
                 .thenReturn(List.of(failed, fallback));
         when(providerDispatcher.charge(eq(ProviderAccount.Provider.BRAINTREE), eq(intent), eq("card")))
                 .thenReturn(new PaymentIntentService.ChargeResult(false, null, null, "ERR", "failed"));

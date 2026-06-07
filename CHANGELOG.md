@@ -21,11 +21,13 @@
 - Fixed webhook delivery retry visibility by propagating delivery failures back to outbox processing.
 - Fixed subscription month/year period rollover handling.
 - Fixed admin overview/monitoring endpoints that previously returned mock data.
+- Fixed Java 17 compile blockers from UTF-8 BOM source files, missing module test/mail dependencies, invalid provider SDK coordinates, an invalid Flyway PostgreSQL submodule dependency, and Square SDK builder usage.
 - Updated focused service tests for payment intent, refund, and retry behavior.
 
 ### Verification
-- Backend compile/test verification is pending JDK 17. Current local Java is `D:\Java\jdk1.8.0_202`, which cannot compile this Java 17 project.
-- Square and Braintree provider adapter signatures still need validation during the Java 17 compile pass with provider SDK dependencies resolved.
+- `mvn -DskipTests compile` passes with `JAVA_HOME=D:\Java\jdk-17`.
+- `mvn -pl nexuspay-service -am -Dtest=VaultServiceTest -Dsurefire.failIfNoSpecifiedTests=false test` passes: 4 tests, 0 failures.
+- Broad backend `mvn test` remains pending.
 
 ---
 

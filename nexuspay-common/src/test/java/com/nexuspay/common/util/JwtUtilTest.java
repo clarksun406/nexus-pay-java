@@ -1,7 +1,10 @@
 package com.nexuspay.common.util;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class JwtUtilTest {
@@ -10,9 +13,9 @@ class JwtUtilTest {
     private final UUID userId = UUID.randomUUID();
     
     public JwtUtilTest() {
-        jwtUtil.secret = "test-secret-must-be-at-least-256-bits-long-for-hmac-sha256";
-        jwtUtil.accessTokenExpiration = 900000L;
-        jwtUtil.refreshTokenExpiration = 604800000L;
+        ReflectionTestUtils.setField(jwtUtil, "secret", "test-secret-must-be-at-least-256-bits-long-for-hmac-sha256");
+        ReflectionTestUtils.setField(jwtUtil, "accessTokenExpiration", 900000L);
+        ReflectionTestUtils.setField(jwtUtil, "refreshTokenExpiration", 604800000L);
     }
     
     @Test

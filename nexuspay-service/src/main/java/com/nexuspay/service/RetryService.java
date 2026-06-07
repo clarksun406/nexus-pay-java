@@ -68,8 +68,9 @@ public class RetryService {
     
     private PaymentIntent tryFallbackProvider(PaymentIntent intent, PaymentRequest lastRequest) {
         // Get available providers excluding the failed one
+        ProviderAccount.Mode accountMode = ProviderAccount.Mode.valueOf(intent.getMode().name());
         List<ProviderAccount> accounts = providerAccountRepository
-                .findByMerchantIdAndModeAndStatus(intent.getMerchantId(), intent.getMode(), 
+                .findByMerchantIdAndModeAndStatus(intent.getMerchantId(), accountMode,
                         ProviderAccount.ConnectorStatus.ACTIVE);
         
         Optional<ProviderAccount> fallback = accounts.stream()

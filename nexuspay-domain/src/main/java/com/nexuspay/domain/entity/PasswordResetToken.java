@@ -1,4 +1,4 @@
-﻿package com.nexuspay.domain.entity;
+package com.nexuspay.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;

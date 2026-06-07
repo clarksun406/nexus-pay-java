@@ -1,4 +1,4 @@
-﻿package com.nexuspay.web.controller;
+package com.nexuspay.web.controller;
 
 import com.nexuspay.service.AuthService;
 import com.nexuspay.service.PasswordResetService;

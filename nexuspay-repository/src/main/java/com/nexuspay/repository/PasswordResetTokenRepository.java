@@ -1,4 +1,4 @@
-﻿package com.nexuspay.repository;
+package com.nexuspay.repository;
 
 import com.nexuspay.domain.entity.PasswordResetToken;
 import org.springframework.data.jpa.repository.JpaRepository;

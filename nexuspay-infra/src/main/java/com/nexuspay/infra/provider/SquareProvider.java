@@ -50,9 +50,10 @@ public class SquareProvider implements PaymentProvider {
 
             CreatePaymentRequest request = new CreatePaymentRequest.Builder(
                     paymentMethodId,
-                    idempotencyKey,
-                    amountMoney
-            ).build();
+                    idempotencyKey
+            )
+                    .amountMoney(amountMoney)
+                    .build();
 
             var response = paymentsApi.createPayment(request);
             Payment payment = response.getPayment();

@@ -1,4 +1,4 @@
-﻿package com.nexuspay.web.controller;
+package com.nexuspay.web.controller;
 
 import com.nexuspay.service.MfaService;
 import jakarta.validation.constraints.NotBlank;

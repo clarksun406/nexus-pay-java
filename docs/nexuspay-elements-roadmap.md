@@ -1,6 +1,6 @@
 # NexusPay Elements And Billing Roadmap
 
-Last updated: 2026-06-04
+Last updated: 2026-06-07
 
 This document tracks the frontend Elements SDK, subscription/billing module, and adjacent admin/dashboard work.
 
@@ -27,7 +27,7 @@ Dashboard/admin:
 ## Remaining Gaps
 
 High priority:
-- Validate all billing and Elements-related backend code with JDK 17.
+- Validate all billing and Elements-related backend code with JDK 17 beyond the current compile pass.
 - Align dashboard customer/subscription API clients and routes with backend endpoints.
 - Complete Payment Element dynamic rendering instead of the current skeleton behavior.
 - Add automatic 3DS/SCA handoff in the Payment Element.
@@ -51,8 +51,8 @@ Lower priority:
 
 ### Phase 1 - Stabilize Billing And Payment Element
 
-- Run Java 17 compile and tests.
-- Fix any provider SDK or subscription compile issues.
+- Run Java 17 compile and targeted tests.
+- Fix provider SDK or subscription compile issues surfaced by verification.
 - Add focused tests for subscription renewals.
 - Complete dashboard route/API alignment for customers and subscriptions.
 - Complete Payment Element dynamic payment method rendering.
@@ -85,4 +85,4 @@ Lower priority:
 - Invoice support is not implemented yet.
 - Frontend route/API alignment needs another pass.
 - Elements package needs publishable artifacts and wrapper packages.
-- Backend verification is blocked until JDK 17 is configured.
+- Java 17 backend compile now passes locally; broad backend test verification still needs follow-up.

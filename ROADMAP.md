@@ -1,16 +1,16 @@
 # NexusPay Roadmap
 
-Last updated: 2026-06-06
+Last updated: 2026-06-07
 
 ## Current Status
 
-NexusPay Java is in a v1 stabilization phase. The core backend modules, provider adapter surface, dashboard APIs, Elements SDK skeleton, and admin foundations exist, but the project should not be treated as fully production-ready until the remaining verification and security gaps are closed.
+NexusPay Java is in a v1 stabilization phase. The core backend modules, provider adapter surface, dashboard APIs, Elements SDK skeleton, admin foundations, and v1.5.0 Card Vault exist, but the project should not be treated as fully production-ready until the remaining security, integration, and broad regression test gaps are closed.
 
-The current high-priority stabilization work has been implemented in code and is ready for a Java 17 compile/test pass.
+The current high-priority stabilization work has passed a Java 17 backend compile pass, and the focused Card Vault service tests pass under JDK 17.
 
 ## v1.0.1 - High-Priority Stabilization
 
-Status: implemented, pending Java 17 verification.
+Status: implemented; Java 17 compile verified on 2026-06-07.
 
 Completed in this cycle:
 - Moved request authentication filters into the web module and restored request context population for JWT and API-key flows.
@@ -28,20 +28,30 @@ Completed in this cycle:
 - Updated focused service tests for the changed refund, payment intent, and retry behavior.
 
 Verification notes:
-- Local Maven currently runs with `D:\Java\jdk1.8.0_202`, but this project requires Java 17.
-- `mvn -DskipTests compile` cannot complete under the current Java 8 environment.
-- `mvnw.cmd` exists, but the Maven wrapper support directory is missing, so use system Maven after configuring JDK 17.
-- Square and Braintree adapter method signatures still need a compile pass with their SDK jars available.
+- `mvn -DskipTests compile` passes with `JAVA_HOME=D:\Java\jdk-17`.
+- Square and Braintree adapter dependencies now resolve with their corrected Maven coordinates.
+- Square create-payment construction has been aligned with the SDK 40.1.0.20240604 builder signature.
+- `mvnw.cmd` exists, but the Maven wrapper support directory is still missing, so use system Maven after configuring JDK 17.
 
 ## v1.0.2 - Build and Provider Verification
 
+Status: partially completed.
+
 Priority: high.
 
-- Configure local and CI builds to use JDK 17.
+Completed on 2026-06-07:
+- Configured local Maven runs to use `D:\Java\jdk-17`.
+- Ran `mvn -DskipTests compile` successfully across all backend modules.
+- Fixed Java source BOM issues that blocked `javac`.
+- Validated Square and Braintree SDK dependency resolution during the Java 17 compile pass.
+- Removed an invalid Flyway PostgreSQL submodule dependency for the current Flyway 9.22.3 baseline.
+
+Remaining:
+
 - Repair or regenerate the Maven wrapper.
-- Run full backend compile and test suites.
-- Validate Square refund/status calls against Square SDK 40.1.0.
-- Validate Braintree refund/status calls against Braintree SDK 3.31.0.
+- Run the full backend test suite beyond the focused Card Vault test.
+- Add or validate Square refund/status calls against Square SDK 40.1.0.20240604.
+- Add or validate Braintree refund/status calls against Braintree SDK 3.31.0.
 - Add provider contract tests or mocked adapter tests for refund/status/webhook state transitions.
 - Add regression tests for merchant tenant enforcement in JWT and API-key requests.
 
@@ -134,7 +144,7 @@ Priority: medium to low.
 
 ## v1.5.0 - Card Vault
 
-Status: implemented, pending Java 17 verification.
+Status: implemented; Java 17 verified.
 
 Priority: high.
 
@@ -150,8 +160,9 @@ Completed in this cycle:
 - Added focused `VaultServiceTest` coverage for sensitive-field handling, deduplication, tenant isolation, and revoke behavior.
 
 Verification notes:
-- Backend compile/tests still require switching the local Maven runtime from Java 8 to Java 17.
-- A full Java 17 pass should include `mvn -pl nexuspay-service -Dtest=VaultServiceTest test` and `mvn -DskipTests compile`.
+- `mvn -DskipTests compile` passes with `JAVA_HOME=D:\Java\jdk-17`.
+- `mvn -pl nexuspay-service -am -Dtest=VaultServiceTest '-Dsurefire.failIfNoSpecifiedTests=false' test` passes: 4 tests, 0 failures.
+- Broad backend regression testing is still tracked under v1.0.2.
 
 ## v2.0.0 - Enterprise Features
 
@@ -210,7 +221,7 @@ Based on the gap analysis, the following should be prioritized in future version
 | v1.2.0 | Billing completion (already defined) + **DSL-based routing rules** with volume %, A/B testing |
 | v1.3.0 | Quality + observability (already defined) + **Redis infrastructure** (caching, rate limiting, job queues) + **Full OTel/Prometheus/Grafana/Loki/Tempo stack** |
 | v1.4.0 | Provider expansion (already defined) + **Connector template system** for rapid provider onboarding |
-| **v1.5.0** | **Card Vault**: implemented vault tokens, envelope encryption, master+custodian key wrapping, audit logs, and polymorphic storage for cards/bank accounts/wallets. Java 17 verification pending. |
+| **v1.5.0** | **Card Vault**: implemented vault tokens, envelope encryption, master+custodian key wrapping, audit logs, and polymorphic storage for cards/bank accounts/wallets. Java 17 compile and focused VaultServiceTest verification completed. |
 | **v1.6.0 (new)** | **Smart Retries & Revenue Recovery**: ML-powered retry engine, categorized error handling (cascading/step-up/clear PAN/global network), error code DB, configurable strategies per subscription/payment method |
 | **v1.7.0 (new)** | **Cost Observability**: per-provider/per-method/per-region cost breakdown, invoice auditing, interchange downgrade detection, PSP markup transparency |
 | **v1.8.0 (new)** | **Network Tokenization**: Visa/MC network token provisioning, 3 integration flows, cryptogram management |
@@ -232,8 +243,8 @@ Based on the gap analysis, the following should be prioritized in future version
 
 ## Immediate Next Steps
 
-1. Switch local build/runtime to JDK 17.
-2. Run `mvn -DskipTests compile`.
-3. Fix any SDK signature issues surfaced by the compile pass.
-4. Run `mvn -pl nexuspay-service -Dtest=VaultServiceTest test`.
-5. Run service tests and add missing auth/provider regression tests.
+1. Repair or regenerate the Maven wrapper.
+2. Run the full backend test suite.
+3. Add provider contract tests for refund/status/webhook state transitions.
+4. Add missing auth/provider regression tests.
+5. Continue v1.6.0 Smart Retries planning and implementation.

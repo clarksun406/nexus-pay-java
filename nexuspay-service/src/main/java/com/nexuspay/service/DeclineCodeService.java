@@ -69,7 +69,7 @@ public class DeclineCodeService {
         Map<String, Object> result = new HashMap<>();
         for (DeclineCategory cat : DeclineCategory.values()) {
             result.put(cat.name(), Map.of(
-                    "isRetryable", cat == TEMPORARY || cat == AUTH,
+                    "isRetryable", cat == DeclineCategory.TEMPORARY || cat == DeclineCategory.AUTH,
                     "description", cat.name().toLowerCase()
             ));
         }

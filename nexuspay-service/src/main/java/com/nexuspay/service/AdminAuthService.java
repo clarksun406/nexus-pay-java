@@ -72,7 +72,7 @@ public class AdminAuthService {
 
     @Transactional
     public void logout(UUID userId) {
-        refreshTokenRepository.deleteByUserId(user.getId());
+        refreshTokenRepository.deleteByUserId(userId);
     }
 
     public Set<String> getPermissions(UUID userId) {

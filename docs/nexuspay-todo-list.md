@@ -1,6 +1,6 @@
 # NexusPay Current TODO List
 
-Last updated: 2026-06-04
+Last updated: 2026-06-07
 
 This document tracks the practical remaining work after the high-priority backend stabilization pass.
 
@@ -26,9 +26,10 @@ High-priority backend gaps addressed:
 
 | Item | Area | Status | Notes |
 |------|------|--------|-------|
-| Configure JDK 17 build | Build | Not done | Current local Java is `D:\Java\jdk1.8.0_202`; project requires Java 17. |
+| Configure JDK 17 build | Build | Done locally | Local Maven verification passes with `JAVA_HOME=D:\Java\jdk-17`. CI and wrapper cleanup still need follow-up. |
 | Restore Maven wrapper | Build | Not done | `mvnw.cmd` exists, but `.mvn/wrapper` is missing. |
-| Compile provider adapters | Provider | Blocked by JDK | Validate Square and Braintree SDK method signatures after dependency resolution. |
+| Compile provider adapters | Provider | Done for compile | Java 17 compile passes after correcting SDK coordinates and Square create-payment builder usage. Add provider contract tests next. |
+| Full backend test suite | Quality | Not done | Focused `VaultServiceTest` passes; broad `mvn test` still needs a dedicated cleanup pass. |
 | Auth regression tests | Security | Not done | Cover JWT access-token enforcement, merchant path checks, and API-key tenant checks. |
 | Provider refund/status tests | Payments | Not done | Add Stripe/Square/Braintree adapter or contract tests. |
 | Admin auth API | Admin | Not done | Add admin login, refresh, logout, and claim separation. |
@@ -70,10 +71,16 @@ High-priority backend gaps addressed:
 
 ## Verification Checklist
 
-Run after JDK 17 is configured:
+Verified on 2026-06-07 with `JAVA_HOME=D:\Java\jdk-17`:
 
 ```bash
 mvn -DskipTests compile
+mvn -pl nexuspay-service -am -Dtest=VaultServiceTest -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+Still pending:
+
+```bash
 mvn test
 ```
 
