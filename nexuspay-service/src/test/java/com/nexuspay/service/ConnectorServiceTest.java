@@ -1,6 +1,7 @@
 package com.nexuspay.service;
 
 import com.nexuspay.common.exception.BusinessException;
+import com.nexuspay.common.util.AesGcmEncryptionService;
 import com.nexuspay.domain.entity.ProviderAccount;
 import com.nexuspay.repository.ProviderAccountRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +22,8 @@ class ConnectorServiceTest {
 
     @Mock
     private ProviderAccountRepository providerAccountRepository;
+    @Mock
+    private AesGcmEncryptionService encryptionService;
 
     @InjectMocks
     private ConnectorService connectorService;
@@ -28,6 +31,7 @@ class ConnectorServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        when(encryptionService.encrypt(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test

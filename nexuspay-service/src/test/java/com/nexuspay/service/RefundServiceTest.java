@@ -2,6 +2,7 @@ package com.nexuspay.service;
 
 import com.nexuspay.domain.entity.PaymentIntent;
 import com.nexuspay.domain.entity.ProviderAccount;
+import com.nexuspay.domain.service.RefundDomainService;
 import com.nexuspay.repository.PaymentIntentRepository;
 import com.nexuspay.repository.RefundRepository;
 import com.nexuspay.service.provider.PaymentProvider;
@@ -17,8 +18,14 @@ class RefundServiceTest {
     @Mock private RefundRepository refundRepository;
     @Mock private PaymentIntentRepository paymentIntentRepository;
     @Mock private ProviderDispatcher providerDispatcher;
+    @Mock private RefundDomainService refundDomainService;
     
     @InjectMocks private RefundService refundService;
+
+    @BeforeEach
+    void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
     
     @Test
     void shouldCreateRefund() {
@@ -36,6 +43,8 @@ class RefundServiceTest {
         intent.setProviderPaymentId("pi_123");
         
         when(paymentIntentRepository.findById(intentId)).thenReturn(Optional.of(intent));
+        when(refundDomainService.validateRefundAmount(null, BigInteger.valueOf(1000)))
+                .thenReturn(BigInteger.valueOf(1000));
         when(providerDispatcher.refund(
                 eq(ProviderAccount.Provider.STRIPE),
                 eq("pi_123"),

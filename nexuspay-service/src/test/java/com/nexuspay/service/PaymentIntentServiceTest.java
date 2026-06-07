@@ -1,6 +1,9 @@
 package com.nexuspay.service;
 
 import com.nexuspay.domain.entity.*;
+import com.nexuspay.domain.aggregate.payment.PaymentIntentAggregate;
+import com.nexuspay.domain.service.PaymentDomainService;
+import com.nexuspay.domain.valueobject.Money;
 import com.nexuspay.repository.PaymentIntentRepository;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -12,6 +15,7 @@ import static org.mockito.Mockito.*;
 class PaymentIntentServiceTest {
     
     @Mock private PaymentIntentRepository paymentIntentRepository;
+    @Mock private PaymentDomainService paymentDomainService;
     @Mock private RoutingEngine routingEngine;
     @Mock private ProviderDispatcher providerDispatcher;
     @Mock private OutboxService outboxService;
@@ -27,6 +31,14 @@ class PaymentIntentServiceTest {
         
         var intent = new PaymentIntent();
         intent.setId(UUID.randomUUID());
+        when(paymentDomainService.createPaymentIntent(eq(merchantId), any(Money.class), eq("key"), eq(false)))
+                .thenReturn(new PaymentIntentAggregate(
+                        UUID.randomUUID(),
+                        merchantId,
+                        Money.of(BigInteger.valueOf(1000), "USD"),
+                        "key",
+                        false
+                ));
         when(paymentIntentRepository.save(any())).thenReturn(intent);
         
         var result = service.create(merchantId, new PaymentIntentService.CreateRequest(

@@ -6,7 +6,7 @@ Last updated: 2026-06-07
 
 NexusPay Java is in a v1 stabilization phase. The core backend modules, provider adapter surface, dashboard APIs, Elements SDK skeleton, admin foundations, and v1.5.0 Card Vault exist, but the project should not be treated as fully production-ready until the remaining security, integration, and broad regression test gaps are closed.
 
-The current high-priority stabilization work has passed a Java 17 backend compile pass, and the focused Card Vault service tests pass under JDK 17.
+The current high-priority stabilization work has passed Java 17 backend compile and full backend `mvn test` regression passes under JDK 17.
 
 ## v1.0.1 - High-Priority Stabilization
 
@@ -42,14 +42,15 @@ Priority: high.
 Completed on 2026-06-07:
 - Configured local Maven runs to use `D:\Java\jdk-17`.
 - Ran `mvn -DskipTests compile` successfully across all backend modules.
+- Ran the full backend `mvn test` suite successfully across all backend modules.
 - Fixed Java source BOM issues that blocked `javac`.
 - Validated Square and Braintree SDK dependency resolution during the Java 17 compile pass.
 - Removed an invalid Flyway PostgreSQL submodule dependency for the current Flyway 9.22.3 baseline.
+- Stabilized service and web controller tests for the updated domain/security dependencies.
 
 Remaining:
 
 - Repair or regenerate the Maven wrapper.
-- Run the full backend test suite beyond the focused Card Vault test.
 - Add or validate Square refund/status calls against Square SDK 40.1.0.20240604.
 - Add or validate Braintree refund/status calls against Braintree SDK 3.31.0.
 - Add provider contract tests or mocked adapter tests for refund/status/webhook state transitions.
@@ -162,7 +163,7 @@ Completed in this cycle:
 Verification notes:
 - `mvn -DskipTests compile` passes with `JAVA_HOME=D:\Java\jdk-17`.
 - `mvn -pl nexuspay-service -am -Dtest=VaultServiceTest '-Dsurefire.failIfNoSpecifiedTests=false' test` passes: 4 tests, 0 failures.
-- Broad backend regression testing is still tracked under v1.0.2.
+- Full backend `mvn test` passes with `JAVA_HOME=D:\Java\jdk-17`: 134 tests, 0 failures.
 
 ## v2.0.0 - Enterprise Features
 
@@ -193,7 +194,7 @@ Comparison against [Hyperswitch](https://github.com/juspay/hyperswitch) (juspay,
 
 | # | Capability | Hyperswitch | NexusPay | Gap |
 |---|-----------|-------------|----------|-----|
-| 1 | **Card Vault / Locker** | PCI DSS L1 vault, JWS/JWE encryption, master+custodian key model, polymorphic storage | None | **Major** |
+| 1 | **Card Vault / Locker** | PCI DSS L1 vault, JWS/JWE encryption, master+custodian key model, polymorphic storage | Implemented v1.5.0 vault tokens, envelope encryption, master+custodian key wrapping, audit logs, and polymorphic storage | **Medium** - compliance certification and production hardening remain |
 | 2 | **Network Tokenization** | Visa/MC network tokens, 3 flows (payment-time, vault-time, standalone API), cryptogram management | None | **Major** |
 | 3 | **Cost Observability** | Granular per-provider/per-method/per-region cost breakdown, invoice auditing, interchange downgrade detection, scheme fee analysis, PSP markup transparency | Basic payout fee calc (2.9% hardcoded) | **Major** |
 | 4 | **Revenue Recovery / Smart Retries** | ML-powered, 20+ parameters, 4 retry categories (cascading, step-up, clear PAN, global network), configurable per subscription/PM, error code DB across 100+ processors | Basic exponential backoff, no categorization | **Major** |
@@ -221,7 +222,7 @@ Based on the gap analysis, the following should be prioritized in future version
 | v1.2.0 | Billing completion (already defined) + **DSL-based routing rules** with volume %, A/B testing |
 | v1.3.0 | Quality + observability (already defined) + **Redis infrastructure** (caching, rate limiting, job queues) + **Full OTel/Prometheus/Grafana/Loki/Tempo stack** |
 | v1.4.0 | Provider expansion (already defined) + **Connector template system** for rapid provider onboarding |
-| **v1.5.0** | **Card Vault**: implemented vault tokens, envelope encryption, master+custodian key wrapping, audit logs, and polymorphic storage for cards/bank accounts/wallets. Java 17 compile and focused VaultServiceTest verification completed. |
+| **v1.5.0** | **Card Vault**: implemented vault tokens, envelope encryption, master+custodian key wrapping, audit logs, and polymorphic storage for cards/bank accounts/wallets. Java 17 compile, focused VaultServiceTest, and full backend `mvn test` verification completed. |
 | **v1.6.0 (new)** | **Smart Retries & Revenue Recovery**: ML-powered retry engine, categorized error handling (cascading/step-up/clear PAN/global network), error code DB, configurable strategies per subscription/payment method |
 | **v1.7.0 (new)** | **Cost Observability**: per-provider/per-method/per-region cost breakdown, invoice auditing, interchange downgrade detection, PSP markup transparency |
 | **v1.8.0 (new)** | **Network Tokenization**: Visa/MC network token provisioning, 3 integration flows, cryptogram management |
@@ -244,7 +245,6 @@ Based on the gap analysis, the following should be prioritized in future version
 ## Immediate Next Steps
 
 1. Repair or regenerate the Maven wrapper.
-2. Run the full backend test suite.
-3. Add provider contract tests for refund/status/webhook state transitions.
-4. Add missing auth/provider regression tests.
-5. Continue v1.6.0 Smart Retries planning and implementation.
+2. Add provider contract tests for refund/status/webhook state transitions.
+3. Add missing auth/provider regression tests.
+4. Continue v1.6.0 Smart Retries planning and implementation.

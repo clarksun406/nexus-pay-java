@@ -23,11 +23,12 @@
 - Fixed admin overview/monitoring endpoints that previously returned mock data.
 - Fixed Java 17 compile blockers from UTF-8 BOM source files, missing module test/mail dependencies, invalid provider SDK coordinates, an invalid Flyway PostgreSQL submodule dependency, and Square SDK builder usage.
 - Updated focused service tests for payment intent, refund, and retry behavior.
+- Updated service and web controller tests for current domain/security dependencies, including MVC test isolation from local PostgreSQL/Flyway.
 
 ### Verification
 - `mvn -DskipTests compile` passes with `JAVA_HOME=D:\Java\jdk-17`.
 - `mvn -pl nexuspay-service -am -Dtest=VaultServiceTest -Dsurefire.failIfNoSpecifiedTests=false test` passes: 4 tests, 0 failures.
-- Broad backend `mvn test` remains pending.
+- Full backend `mvn test` passes with `JAVA_HOME=D:\Java\jdk-17`: 134 tests, 0 failures.
 
 ---
 

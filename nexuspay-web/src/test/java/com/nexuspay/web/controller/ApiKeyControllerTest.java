@@ -1,18 +1,24 @@
 package com.nexuspay.web.controller;
 
+import com.nexuspay.service.ApiKeyService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class ApiKeyControllerTest {
+@WebMvcTest(ApiKeyController.class)
+@Import(WebMvcTestSecurityConfig.class)
+class ApiKeyControllerTest extends WebMvcSecurityTestSupport {
     
     @Autowired private MockMvc mockMvc;
+
+    @MockBean
+    private ApiKeyService apiKeyService;
     
     @Test
     void shouldRequireAuthForApiKeys() throws Exception {

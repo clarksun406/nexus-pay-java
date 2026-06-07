@@ -20,6 +20,7 @@ class AuthServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private com.nexuspay.common.util.JwtUtil jwtUtil;
     @Mock private com.nexuspay.common.util.CryptoUtil cryptoUtil;
+    @Mock private EmailService emailService;
     
     @InjectMocks private AuthService authService;
     
