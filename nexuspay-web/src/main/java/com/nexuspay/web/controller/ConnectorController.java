@@ -29,16 +29,19 @@ public class ConnectorController {
     
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
+            @RequestAttribute("merchantId") UUID merchantId,
             @PathVariable UUID id,
             @RequestBody UpdateConnectorRequest req) {
-        return ResponseEntity.ok(connectorService.update(id,
+        return ResponseEntity.ok(connectorService.update(merchantId, id,
                 new ConnectorService.UpdateConnectorRequest(
                         req.label(), req.weight(), req.isPrimary(), req.status())));
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<?> get(@PathVariable UUID id) {
-        return ResponseEntity.ok(connectorService.getConnector(id));
+    public ResponseEntity<?> get(
+            @RequestAttribute("merchantId") UUID merchantId,
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(connectorService.getConnector(merchantId, id));
     }
     
     @GetMapping
@@ -47,8 +50,10 @@ public class ConnectorController {
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable UUID id) {
-        connectorService.delete(id);
+    public ResponseEntity<?> delete(
+            @RequestAttribute("merchantId") UUID merchantId,
+            @PathVariable UUID id) {
+        connectorService.delete(merchantId, id);
         return ResponseEntity.ok().build();
     }
     

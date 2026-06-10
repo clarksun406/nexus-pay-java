@@ -11,5 +11,6 @@ import java.util.UUID;
 @Repository
 public interface PaymentLinkRepository extends JpaRepository<PaymentLink, UUID> {
     List<PaymentLink> findByMerchantId(UUID merchantId);
+    Optional<PaymentLink> findByMerchantIdAndId(UUID merchantId, UUID id);
     Optional<PaymentLink> findByToken(String token);
 }

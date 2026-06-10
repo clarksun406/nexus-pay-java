@@ -21,10 +21,12 @@ public class HealthMonitorController {
     }
     
     @GetMapping("/connectors/{accountId}")
-    public ResponseEntity<?> getConnectorHealth(@PathVariable UUID accountId) {
+    public ResponseEntity<?> getConnectorHealth(
+            @RequestAttribute("merchantId") UUID merchantId,
+            @PathVariable UUID accountId) {
         return ResponseEntity.ok(Map.of(
                 "accountId", accountId,
-                "metrics", healthMonitorService.getMetrics(accountId)
+                "metrics", healthMonitorService.getMetrics(merchantId, accountId)
         ));
     }
     

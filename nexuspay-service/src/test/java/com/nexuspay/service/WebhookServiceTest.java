@@ -60,8 +60,10 @@ class WebhookServiceTest {
     @Test
     void shouldUpdateAllProvidedFields() {
         UUID endpointId = UUID.randomUUID();
+        UUID merchantId = UUID.randomUUID();
         WebhookEndpoint existing = new WebhookEndpoint();
         existing.setId(endpointId);
+        existing.setMerchantId(merchantId);
         existing.setUrl("https://old.example.com/webhook");
         existing.setEvents("payment.failed");
         existing.setStatus(WebhookEndpoint.EndpointStatus.ACTIVE);
@@ -72,36 +74,38 @@ class WebhookServiceTest {
                 WebhookEndpoint.EndpointStatus.INACTIVE
         );
 
-        when(webhookEndpointRepository.findById(endpointId)).thenReturn(Optional.of(existing));
+        when(webhookEndpointRepository.findByMerchantIdAndId(merchantId, endpointId)).thenReturn(Optional.of(existing));
         when(webhookEndpointRepository.save(any(WebhookEndpoint.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        WebhookEndpoint result = webhookService.update(endpointId, req);
+        WebhookEndpoint result = webhookService.update(merchantId, endpointId, req);
 
         assertEquals("https://new.example.com/webhook", result.getUrl());
         assertEquals("payment.succeeded,payment.failed", result.getEvents());
         assertEquals(WebhookEndpoint.EndpointStatus.INACTIVE, result.getStatus());
 
-        verify(webhookEndpointRepository).findById(endpointId);
+        verify(webhookEndpointRepository).findByMerchantIdAndId(merchantId, endpointId);
         verify(webhookEndpointRepository).save(existing);
     }
 
     @Test
     void shouldKeepOriginalValuesWhenUpdateFieldsAreNull() {
         UUID endpointId = UUID.randomUUID();
+        UUID merchantId = UUID.randomUUID();
         WebhookEndpoint existing = new WebhookEndpoint();
         existing.setId(endpointId);
+        existing.setMerchantId(merchantId);
         existing.setUrl("https://old.example.com/webhook");
         existing.setEvents("payment.failed");
         existing.setStatus(WebhookEndpoint.EndpointStatus.ACTIVE);
 
         var req = new WebhookService.UpdateWebhookRequest(null, null, null);
 
-        when(webhookEndpointRepository.findById(endpointId)).thenReturn(Optional.of(existing));
+        when(webhookEndpointRepository.findByMerchantIdAndId(merchantId, endpointId)).thenReturn(Optional.of(existing));
         when(webhookEndpointRepository.save(any(WebhookEndpoint.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        WebhookEndpoint result = webhookService.update(endpointId, req);
+        WebhookEndpoint result = webhookService.update(merchantId, endpointId, req);
 
         assertEquals("https://old.example.com/webhook", result.getUrl());
         assertEquals("payment.failed", result.getEvents());
@@ -113,11 +117,12 @@ class WebhookServiceTest {
     @Test
     void shouldThrowNotFoundWhenUpdateMissingEndpoint() {
         UUID endpointId = UUID.randomUUID();
+        UUID merchantId = UUID.randomUUID();
         var req = new WebhookService.UpdateWebhookRequest("https://new.example.com/webhook", "event", null);
 
-        when(webhookEndpointRepository.findById(endpointId)).thenReturn(Optional.empty());
+        when(webhookEndpointRepository.findByMerchantIdAndId(merchantId, endpointId)).thenReturn(Optional.empty());
 
-        BusinessException ex = assertThrows(BusinessException.class, () -> webhookService.update(endpointId, req));
+        BusinessException ex = assertThrows(BusinessException.class, () -> webhookService.update(merchantId, endpointId, req));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
         assertEquals("Webhook endpoint not found", ex.getMessage());
 
@@ -141,23 +146,26 @@ class WebhookServiceTest {
     @Test
     void shouldGetEndpointById() {
         UUID endpointId = UUID.randomUUID();
+        UUID merchantId = UUID.randomUUID();
         WebhookEndpoint endpoint = new WebhookEndpoint();
         endpoint.setId(endpointId);
+        endpoint.setMerchantId(merchantId);
 
-        when(webhookEndpointRepository.findById(endpointId)).thenReturn(Optional.of(endpoint));
+        when(webhookEndpointRepository.findByMerchantIdAndId(merchantId, endpointId)).thenReturn(Optional.of(endpoint));
 
-        WebhookEndpoint result = webhookService.getEndpoint(endpointId);
+        WebhookEndpoint result = webhookService.getEndpoint(merchantId, endpointId);
 
         assertEquals(endpointId, result.getId());
-        verify(webhookEndpointRepository).findById(endpointId);
+        verify(webhookEndpointRepository).findByMerchantIdAndId(merchantId, endpointId);
     }
 
     @Test
     void shouldThrowNotFoundWhenGetEndpointMissing() {
         UUID endpointId = UUID.randomUUID();
-        when(webhookEndpointRepository.findById(endpointId)).thenReturn(Optional.empty());
+        UUID merchantId = UUID.randomUUID();
+        when(webhookEndpointRepository.findByMerchantIdAndId(merchantId, endpointId)).thenReturn(Optional.empty());
 
-        BusinessException ex = assertThrows(BusinessException.class, () -> webhookService.getEndpoint(endpointId));
+        BusinessException ex = assertThrows(BusinessException.class, () -> webhookService.getEndpoint(merchantId, endpointId));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
         assertEquals("Webhook endpoint not found", ex.getMessage());
     }
@@ -165,9 +173,15 @@ class WebhookServiceTest {
     @Test
     void shouldDeleteEndpointById() {
         UUID endpointId = UUID.randomUUID();
+        UUID merchantId = UUID.randomUUID();
+        WebhookEndpoint endpoint = new WebhookEndpoint();
+        endpoint.setId(endpointId);
+        endpoint.setMerchantId(merchantId);
 
-        webhookService.delete(endpointId);
+        when(webhookEndpointRepository.findByMerchantIdAndId(merchantId, endpointId)).thenReturn(Optional.of(endpoint));
 
-        verify(webhookEndpointRepository).deleteById(endpointId);
+        webhookService.delete(merchantId, endpointId);
+
+        verify(webhookEndpointRepository).delete(endpoint);
     }
 }

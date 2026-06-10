@@ -126,12 +126,12 @@ class ConnectorServiceTest {
                 ProviderAccount.ConnectorStatus.UNHEALTHY
         );
 
-        when(providerAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(providerAccountRepository.findByMerchantIdAndId(merchantId, accountId)).thenReturn(Optional.of(account));
         when(providerAccountRepository.findByMerchantIdAndIsPrimaryTrue(merchantId)).thenReturn(Optional.of(oldPrimary));
         when(providerAccountRepository.save(any(ProviderAccount.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        ProviderAccount result = connectorService.update(accountId, req);
+        ProviderAccount result = connectorService.update(merchantId, accountId, req);
 
         assertEquals("New Label", result.getLabel());
         assertEquals(5, result.getWeight());
@@ -146,12 +146,13 @@ class ConnectorServiceTest {
     @Test
     void shouldThrowNotFoundWhenUpdateMissingConnector() {
         UUID accountId = UUID.randomUUID();
-        when(providerAccountRepository.findById(accountId)).thenReturn(Optional.empty());
+        UUID merchantId = UUID.randomUUID();
+        when(providerAccountRepository.findByMerchantIdAndId(merchantId, accountId)).thenReturn(Optional.empty());
 
         ConnectorService.UpdateConnectorRequest req = new ConnectorService.UpdateConnectorRequest(
                 "X", 2, false, ProviderAccount.ConnectorStatus.ACTIVE);
 
-        BusinessException ex = assertThrows(BusinessException.class, () -> connectorService.update(accountId, req));
+        BusinessException ex = assertThrows(BusinessException.class, () -> connectorService.update(merchantId, accountId, req));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
         assertEquals("Connector not found", ex.getMessage());
     }
@@ -170,12 +171,14 @@ class ConnectorServiceTest {
     @Test
     void shouldGetConnectorById() {
         UUID accountId = UUID.randomUUID();
+        UUID merchantId = UUID.randomUUID();
         ProviderAccount account = new ProviderAccount();
         account.setId(accountId);
+        account.setMerchantId(merchantId);
 
-        when(providerAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(providerAccountRepository.findByMerchantIdAndId(merchantId, accountId)).thenReturn(Optional.of(account));
 
-        ProviderAccount result = connectorService.getConnector(accountId);
+        ProviderAccount result = connectorService.getConnector(merchantId, accountId);
 
         assertEquals(accountId, result.getId());
     }
@@ -183,9 +186,10 @@ class ConnectorServiceTest {
     @Test
     void shouldThrowNotFoundWhenGetConnectorMissing() {
         UUID accountId = UUID.randomUUID();
-        when(providerAccountRepository.findById(accountId)).thenReturn(Optional.empty());
+        UUID merchantId = UUID.randomUUID();
+        when(providerAccountRepository.findByMerchantIdAndId(merchantId, accountId)).thenReturn(Optional.empty());
 
-        BusinessException ex = assertThrows(BusinessException.class, () -> connectorService.getConnector(accountId));
+        BusinessException ex = assertThrows(BusinessException.class, () -> connectorService.getConnector(merchantId, accountId));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
         assertEquals("Connector not found", ex.getMessage());
     }
@@ -193,9 +197,15 @@ class ConnectorServiceTest {
     @Test
     void shouldDeleteConnectorById() {
         UUID accountId = UUID.randomUUID();
+        UUID merchantId = UUID.randomUUID();
+        ProviderAccount account = new ProviderAccount();
+        account.setId(accountId);
+        account.setMerchantId(merchantId);
 
-        connectorService.delete(accountId);
+        when(providerAccountRepository.findByMerchantIdAndId(merchantId, accountId)).thenReturn(Optional.of(account));
 
-        verify(providerAccountRepository).deleteById(accountId);
+        connectorService.delete(merchantId, accountId);
+
+        verify(providerAccountRepository).delete(account);
     }
 }

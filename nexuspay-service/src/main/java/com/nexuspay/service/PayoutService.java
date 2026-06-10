@@ -32,8 +32,8 @@ public class PayoutService {
         return payoutRepository.findByMerchantId(merchantId);
     }
     
-    public Payout getPayout(UUID payoutId) {
-        return payoutRepository.findById(payoutId)
+    public Payout getPayout(UUID merchantId, UUID payoutId) {
+        return payoutRepository.findByMerchantIdAndId(merchantId, payoutId)
                 .orElseThrow(() -> new IllegalArgumentException("Payout not found"));
     }
     

@@ -42,8 +42,8 @@ public class PaymentLinkService {
     }
     
     @Transactional
-    public PaymentLink update(UUID linkId, UpdateRequest req) {
-        PaymentLink link = paymentLinkRepository.findById(linkId)
+    public PaymentLink update(UUID merchantId, UUID linkId, UpdateRequest req) {
+        PaymentLink link = paymentLinkRepository.findByMerchantIdAndId(merchantId, linkId)
                 .orElseThrow(() -> new BusinessException("Payment link not found", HttpStatus.NOT_FOUND));
         
         if (req.title() != null) link.setTitle(req.title());
@@ -55,8 +55,8 @@ public class PaymentLinkService {
     }
     
     @Transactional
-    public PaymentLink deactivate(UUID linkId) {
-        PaymentLink link = paymentLinkRepository.findById(linkId)
+    public PaymentLink deactivate(UUID merchantId, UUID linkId) {
+        PaymentLink link = paymentLinkRepository.findByMerchantIdAndId(merchantId, linkId)
                 .orElseThrow(() -> new BusinessException("Payment link not found", HttpStatus.NOT_FOUND));
         link.setStatus(PaymentLink.LinkStatus.INACTIVE);
         return paymentLinkRepository.save(link);
@@ -77,8 +77,8 @@ public class PaymentLinkService {
         return link;
     }
     
-    public PaymentLink get(UUID linkId) {
-        return paymentLinkRepository.findById(linkId)
+    public PaymentLink get(UUID merchantId, UUID linkId) {
+        return paymentLinkRepository.findByMerchantIdAndId(merchantId, linkId)
                 .orElseThrow(() -> new BusinessException("Payment link not found", HttpStatus.NOT_FOUND));
     }
     

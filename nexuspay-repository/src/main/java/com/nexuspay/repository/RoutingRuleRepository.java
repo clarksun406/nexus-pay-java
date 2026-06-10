@@ -5,10 +5,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface RoutingRuleRepository extends JpaRepository<RoutingRule, UUID> {
     List<RoutingRule> findByMerchantIdOrderByPriorityAsc(UUID merchantId);
     List<RoutingRule> findByMerchantIdAndEnabledTrueOrderByPriorityAsc(UUID merchantId);
+    Optional<RoutingRule> findByMerchantIdAndId(UUID merchantId, UUID id);
 }

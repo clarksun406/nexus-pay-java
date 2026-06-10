@@ -24,14 +24,14 @@ public class DisputeService {
         return disputeRepository.findByMerchantId(merchantId);
     }
     
-    public Dispute getDispute(UUID disputeId) {
-        return disputeRepository.findById(disputeId)
+    public Dispute getDispute(UUID merchantId, UUID disputeId) {
+        return disputeRepository.findByMerchantIdAndId(merchantId, disputeId)
                 .orElseThrow(() -> new BusinessException("Dispute not found", HttpStatus.NOT_FOUND));
     }
     
     @Transactional
-    public Dispute saveEvidence(UUID disputeId, String evidence) {
-        Dispute dispute = getDispute(disputeId);
+    public Dispute saveEvidence(UUID merchantId, UUID disputeId, String evidence) {
+        Dispute dispute = getDispute(merchantId, disputeId);
         
         if (dispute.getStatus() == Dispute.DisputeStatus.WON || 
             dispute.getStatus() == Dispute.DisputeStatus.LOST) {
@@ -43,8 +43,8 @@ public class DisputeService {
     }
     
     @Transactional
-    public Dispute submitEvidence(UUID disputeId) {
-        Dispute dispute = getDispute(disputeId);
+    public Dispute submitEvidence(UUID merchantId, UUID disputeId) {
+        Dispute dispute = getDispute(merchantId, disputeId);
         
         if (dispute.getEvidence() == null || dispute.getEvidence().isBlank()) {
             throw new BusinessException("No evidence to submit", HttpStatus.BAD_REQUEST);

@@ -4,6 +4,7 @@ import com.nexuspay.common.exception.BusinessException;
 import com.nexuspay.domain.entity.PaymentIntent;
 import com.nexuspay.domain.entity.RoutingRule;
 import com.nexuspay.repository.RoutingRuleRepository;
+import com.nexuspay.repository.ProviderAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,9 +18,13 @@ import java.util.UUID;
 public class RoutingRuleService {
     
     private final RoutingRuleRepository routingRuleRepository;
+    private final ProviderAccountRepository providerAccountRepository;
     
     @Transactional
     public RoutingRule create(UUID merchantId, CreateRuleRequest req) {
+        validateConnectorOwnership(merchantId, req.targetAccountId());
+        validateConnectorOwnership(merchantId, req.fallbackAccountId());
+
         RoutingRule rule = new RoutingRule();
         rule.setMerchantId(merchantId);
         rule.setPriority(req.priority());
@@ -39,8 +44,8 @@ public class RoutingRuleService {
     }
     
     @Transactional
-    public RoutingRule update(UUID ruleId, UpdateRuleRequest req) {
-        RoutingRule rule = routingRuleRepository.findById(ruleId)
+    public RoutingRule update(UUID merchantId, UUID ruleId, UpdateRuleRequest req) {
+        RoutingRule rule = routingRuleRepository.findByMerchantIdAndId(merchantId, ruleId)
                 .orElseThrow(() -> new BusinessException("Rule not found", HttpStatus.NOT_FOUND));
         
         if (req.priority() != null) rule.setPriority(req.priority());
@@ -59,14 +64,23 @@ public class RoutingRuleService {
         return routingRuleRepository.findByMerchantIdOrderByPriorityAsc(merchantId);
     }
     
-    public RoutingRule getRule(UUID ruleId) {
-        return routingRuleRepository.findById(ruleId)
+    public RoutingRule getRule(UUID merchantId, UUID ruleId) {
+        return routingRuleRepository.findByMerchantIdAndId(merchantId, ruleId)
                 .orElseThrow(() -> new BusinessException("Rule not found", HttpStatus.NOT_FOUND));
     }
     
     @Transactional
-    public void delete(UUID ruleId) {
-        routingRuleRepository.deleteById(ruleId);
+    public void delete(UUID merchantId, UUID ruleId) {
+        RoutingRule rule = getRule(merchantId, ruleId);
+        routingRuleRepository.delete(rule);
+    }
+
+    private void validateConnectorOwnership(UUID merchantId, UUID accountId) {
+        if (accountId == null) {
+            return;
+        }
+        providerAccountRepository.findByMerchantIdAndId(merchantId, accountId)
+                .orElseThrow(() -> new BusinessException("Connector not found", HttpStatus.NOT_FOUND));
     }
     
     public record CreateRuleRequest(Integer priority, Boolean enabled, String currencies,

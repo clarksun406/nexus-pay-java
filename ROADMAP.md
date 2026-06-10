@@ -1,12 +1,12 @@
 # NexusPay Roadmap
 
-Last updated: 2026-06-07
+Last updated: 2026-06-09
 
 ## Current Status
 
-NexusPay Java is in a v1 stabilization phase. The core backend modules, provider adapter surface, dashboard APIs, Elements SDK skeleton, admin foundations, and v1.5.0 Card Vault exist, but the project should not be treated as fully production-ready until the remaining security, integration, and broad regression test gaps are closed.
+NexusPay Java is in a v1 stabilization phase. The core backend modules, provider adapter surface, dashboard APIs, Elements SDK skeleton, admin foundations, v1.5.0 Card Vault, and the 2026-06-09 high-risk security hardening pass exist, but the project should not be treated as fully production-ready until the remaining integration, E2E, compliance, and operational hardening gaps are closed.
 
-The current high-priority stabilization work has passed Java 17 backend compile and full backend `mvn test` regression passes under JDK 17.
+The current high-priority stabilization work has passed Java 17 backend compile and full backend `mvn test` regression passes under JDK 17. The latest root `mvn test` pass on 2026-06-09 completed successfully; 11 Testcontainers repository integration tests remain skipped unless Docker is available.
 
 ## v1.0.1 - High-Priority Stabilization
 
@@ -108,6 +108,27 @@ Priority: high.
 - Add permission entities, repositories, services, and seed data.
 - Add `@RequirePermission` and an AOP permission check for protected operations.
 - Add frontend route guards and permission-aware UI controls.
+
+## v1.1.1 - High-Risk Security Hardening
+
+Status: implemented on 2026-06-09.
+
+Priority: critical.
+
+Completed:
+- Enforced merchant-scoped resource access for connector, routing rule, webhook, API key revoke, payment link, refund, payout, invoice, dispute, and health connector metrics paths.
+- Added merchant-scoped repository lookups where resource ownership is required.
+- Hardened routing so connector account resolution and routing rule target/fallback validation are scoped to the current merchant.
+- Removed API key plaintext persistence from the entity and service list response; creation now returns the plaintext key once.
+- Added `V10__security_hardening.sql` to drop legacy `api_keys.plaintext_key` and remove the weak default bootstrap admin credential if it is still unchanged.
+- Hardened merchant/admin refresh-token flows with explicit refresh-token type checks, admin/merchant role separation, and admin-access rechecks on refresh.
+- Synced merchant registration and member role changes to permission-backed `user_roles` grants.
+- Persisted payment confirmation state (`PROCESSING` plus connector/provider selection) before calling the external provider.
+- Added focused regression tests for API key secret handling, admin/merchant refresh token separation, routing account scope, and merchant-scoped resource access.
+
+Verification:
+- `mvn -pl nexuspay-service -am test`: 113 service tests, 0 failures.
+- Root `mvn test`: build success across all modules; web module reports 36 tests with 11 skipped Testcontainers integration tests.
 
 ## v1.2.0 - Billing and Dashboard Completion
 
@@ -304,6 +325,7 @@ Based on the gap analysis, the following should be prioritized in future version
 
 ## Immediate Next Steps
 
-1. Continue v1.4.0: Add PayPal provider support.
-2. Continue v1.6.0: Smart Retries planning and implementation.
-3. Plan v1.9.0: Crypto acquiring architecture review.
+1. Add E2E coverage for merchant dashboard, admin portal, payment links, and checkout flows.
+2. Enable Docker-backed Testcontainers runs in CI for repository integration tests.
+3. Continue v1.4.0: Add PayPal provider support.
+4. Continue v1.6.0: Smart Retries planning and implementation.

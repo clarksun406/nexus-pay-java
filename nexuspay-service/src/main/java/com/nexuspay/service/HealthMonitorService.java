@@ -1,5 +1,6 @@
 package com.nexuspay.service;
 
+import com.nexuspay.common.exception.BusinessException;
 import com.nexuspay.domain.entity.PaymentIntent;
 import com.nexuspay.domain.entity.ProviderAccount;
 import com.nexuspay.repository.PaymentIntentRepository;
@@ -7,6 +8,7 @@ import com.nexuspay.repository.ProviderAccountRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -59,6 +61,12 @@ public class HealthMonitorService {
     
     public HealthMetrics getMetrics(UUID accountId) {
         return metricsMap.getOrDefault(accountId, new HealthMetrics());
+    }
+
+    public HealthMetrics getMetrics(UUID merchantId, UUID accountId) {
+        providerAccountRepository.findByMerchantIdAndId(merchantId, accountId)
+                .orElseThrow(() -> new BusinessException("Connector not found", HttpStatus.NOT_FOUND));
+        return getMetrics(accountId);
     }
     
     public List<UUID> getUnhealthyConnectors(UUID merchantId, double threshold) {

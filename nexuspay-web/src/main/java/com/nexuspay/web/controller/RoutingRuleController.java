@@ -29,17 +29,20 @@ public class RoutingRuleController {
     
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
+            @RequestAttribute("merchantId") UUID merchantId,
             @PathVariable UUID id,
             @RequestBody UpdateRoutingRuleRequest req) {
-        return ResponseEntity.ok(routingRuleService.update(id,
+        return ResponseEntity.ok(routingRuleService.update(merchantId, id,
                 new RoutingRuleService.UpdateRuleRequest(
                         req.priority(), req.enabled(), req.currencies(), req.amountMin(), req.amountMax(),
                         req.countryCodes(), req.paymentMethodTypes(), req.weight())));
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<?> get(@PathVariable UUID id) {
-        return ResponseEntity.ok(routingRuleService.getRule(id));
+    public ResponseEntity<?> get(
+            @RequestAttribute("merchantId") UUID merchantId,
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(routingRuleService.getRule(merchantId, id));
     }
     
     @GetMapping
@@ -48,8 +51,10 @@ public class RoutingRuleController {
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable UUID id) {
-        routingRuleService.delete(id);
+    public ResponseEntity<?> delete(
+            @RequestAttribute("merchantId") UUID merchantId,
+            @PathVariable UUID id) {
+        routingRuleService.delete(merchantId, id);
         return ResponseEntity.ok().build();
     }
     

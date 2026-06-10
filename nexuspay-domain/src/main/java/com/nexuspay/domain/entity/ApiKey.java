@@ -30,9 +30,6 @@ public class ApiKey {
     @Column(name = "key_hash", nullable = false, unique = true, length = 64)
     private String keyHash;
     
-    @Column(name = "plaintext_key", length = 255)
-    private String plaintextKey;
-    
     @Column(nullable = false, length = 20)
     private String prefix;
     

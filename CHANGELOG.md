@@ -8,6 +8,10 @@
 - Added scheduler execution for failed payment retries, subscription renewals, payout summaries, and outbox processing.
 - Added repository-backed admin overview and monitoring responses.
 - Added a minimal subscription renewal processing loop.
+- Added API key summary DTOs and one-time key creation responses so plaintext API keys are not returned from list operations.
+- Added merchant-scoped repository lookups for connector, routing rule, webhook, refund, payment link, payout, invoice, dispute, and API-key revoke paths.
+- Added security regression tests for API key secret handling, admin/merchant refresh token separation, and routing account scope.
+- Added `V10__security_hardening.sql` to drop legacy API key plaintext storage and remove the unchanged weak bootstrap admin account.
 
 ### Changed
 - Moved JWT and API-key request filters from `nexuspay-common` to `nexuspay-web` so repository-backed security checks can be wired correctly.
@@ -16,6 +20,9 @@
 - Changed refund creation to call the selected provider instead of returning mock `re_` IDs.
 - Changed reconciliation to compare local payment state with provider state.
 - Changed outbox event payloads to include merchant IDs and payment status.
+- Changed merchant/admin refresh-token flows to require explicit refresh tokens and reject cross-context admin/merchant token reuse.
+- Changed routing account resolution to re-check connector ownership with the current merchant ID.
+- Changed payment confirmation to persist the provider attempt state before invoking an external provider charge.
 
 ### Fixed
 - Fixed webhook delivery retry visibility by propagating delivery failures back to outbox processing.
@@ -24,11 +31,14 @@
 - Fixed Java 17 compile blockers from UTF-8 BOM source files, missing module test/mail dependencies, invalid provider SDK coordinates, an invalid Flyway PostgreSQL submodule dependency, and Square SDK builder usage.
 - Updated focused service tests for payment intent, refund, and retry behavior.
 - Updated service and web controller tests for current domain/security dependencies, including MVC test isolation from local PostgreSQL/Flyway.
+- Fixed high-risk cross-merchant resource access gaps by requiring merchant-scoped lookups in service/controller paths.
+- Fixed RBAC lifecycle gaps by granting `MERCHANT_OWNER` during registration and syncing member role changes/removals to `user_roles`.
 
 ### Verification
 - `mvn -DskipTests compile` passes with `JAVA_HOME=D:\Java\jdk-17`.
 - `mvn -pl nexuspay-service -am -Dtest=VaultServiceTest -Dsurefire.failIfNoSpecifiedTests=false test` passes: 4 tests, 0 failures.
 - Full backend `mvn test` passes with `JAVA_HOME=D:\Java\jdk-17`: 199 tests, 0 failures, 0 errors (11 skipped: Testcontainers requires Docker).
+- 2026-06-09 root `mvn test` passes across all modules; web module reports 36 tests with 11 skipped Testcontainers integration tests.
 
 ### v1.0.2 Completed (2026-06-07)
 - Regenerated Maven wrapper (`.mvn/wrapper/`, Maven 3.9.9).

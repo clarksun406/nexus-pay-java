@@ -21,17 +21,20 @@ public class DisputeController {
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<?> get(@PathVariable UUID id) {
-        return ResponseEntity.ok(disputeService.getDispute(id));
+    public ResponseEntity<?> get(@PathVariable UUID merchantId, @PathVariable UUID id) {
+        return ResponseEntity.ok(disputeService.getDispute(merchantId, id));
     }
     
     @PutMapping("/{id}/evidence")
-    public ResponseEntity<?> saveEvidence(@PathVariable UUID id, @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(disputeService.saveEvidence(id, body.get("evidence")));
+    public ResponseEntity<?> saveEvidence(
+            @PathVariable UUID merchantId,
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(disputeService.saveEvidence(merchantId, id, body.get("evidence")));
     }
     
     @PostMapping("/{id}/evidence/submit")
-    public ResponseEntity<?> submitEvidence(@PathVariable UUID id) {
-        return ResponseEntity.ok(disputeService.submitEvidence(id));
+    public ResponseEntity<?> submitEvidence(@PathVariable UUID merchantId, @PathVariable UUID id) {
+        return ResponseEntity.ok(disputeService.submitEvidence(merchantId, id));
     }
 }

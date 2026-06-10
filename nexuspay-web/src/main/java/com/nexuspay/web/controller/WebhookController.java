@@ -25,15 +25,18 @@ public class WebhookController {
     
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
+            @RequestAttribute("merchantId") UUID merchantId,
             @PathVariable UUID id,
             @RequestBody UpdateWebhookRequest req) {
-        return ResponseEntity.ok(webhookService.update(id,
+        return ResponseEntity.ok(webhookService.update(merchantId, id,
                 new WebhookService.UpdateWebhookRequest(req.url(), req.events(), req.status())));
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<?> get(@PathVariable UUID id) {
-        return ResponseEntity.ok(webhookService.getEndpoint(id));
+    public ResponseEntity<?> get(
+            @RequestAttribute("merchantId") UUID merchantId,
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(webhookService.getEndpoint(merchantId, id));
     }
     
     @GetMapping
@@ -42,8 +45,10 @@ public class WebhookController {
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable UUID id) {
-        webhookService.delete(id);
+    public ResponseEntity<?> delete(
+            @RequestAttribute("merchantId") UUID merchantId,
+            @PathVariable UUID id) {
+        webhookService.delete(merchantId, id);
         return ResponseEntity.ok().build();
     }
     

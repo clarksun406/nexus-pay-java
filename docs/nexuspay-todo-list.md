@@ -1,8 +1,8 @@
 # NexusPay Current TODO List
 
-Last updated: 2026-06-07
+Last updated: 2026-06-09
 
-This document tracks the practical remaining work after the high-priority backend stabilization pass.
+This document tracks the practical remaining work after the high-priority backend stabilization and 2026-06-09 high-risk security hardening passes.
 
 ## Completed In Current Stabilization
 
@@ -21,6 +21,13 @@ High-priority backend gaps addressed:
 - Reconciliation now compares local status to provider status instead of returning no discrepancies.
 - Admin overview/monitoring now use repository/provider data instead of hardcoded mock data.
 - Subscription renewal processing has a minimal automatic loop and fixed month/year period rollover.
+- Merchant-scoped resource ownership is now enforced for connector, routing rule, webhook, API key revoke, payment link, refund, payout, invoice, dispute, and connector health metrics paths.
+- Routing now validates connector target/fallback ownership and re-checks connector account lookup against the current merchant.
+- API key plaintext persistence has been removed; key creation returns the plaintext key once and list responses expose summaries only.
+- Merchant/admin refresh-token flows now require explicit refresh tokens and reject cross-context admin/merchant token reuse.
+- Merchant registration and member role updates now sync permission-backed `user_roles` grants.
+- Payment confirmation now persists `PROCESSING` and selected connector/provider state before external provider charge.
+- Added `V10__security_hardening.sql` for legacy plaintext API key cleanup and weak bootstrap admin removal.
 
 ## High Priority Remaining
 
@@ -32,11 +39,13 @@ High-priority backend gaps addressed:
 | Full backend test suite | Quality | Done | Root `mvn test` passes: 172 tests, 0 failures. |
 | Auth regression tests | Security | Done | MerchantTenantSecurityTest covers JWT cross-merchant access, refresh-token rejection, API-key tenant checks, revoked key handling (+18 tests). |
 | Provider refund/status tests | Payments | Done | Added ProviderDispatcher refund/status contract tests (+7) and ProviderWebhookServiceTest (+13). |
-| Admin auth API | Admin | Not done | Add admin login, refresh, logout, and claim separation. |
-| Admin JWT filter | Admin | Not done | Protect `/api/v1/admin/**` with platform-admin identity. |
-| Permission-backed RBAC | Security | Not done | Add permission tables, services, annotation, and AOP checks. |
-| Invoice module | Billing | Not done | Add invoice entity, API, and subscription invoice events. |
-| Frontend route/API alignment | Frontend | Not done | Recheck customers/subscriptions dashboard routes against backend APIs. |
+| Admin auth API | Admin | Done | Admin login, refresh, logout, and claim separation exist; refresh now re-checks admin access. |
+| Admin JWT filter | Admin | Done | `/api/v1/admin/**` is protected with platform-admin identity. |
+| Permission-backed RBAC | Security | Done baseline | Permission tables, services, annotation, AOP checks, and merchant member grant sync exist. Broader endpoint annotation coverage remains a follow-up. |
+| Invoice module | Billing | Done | Invoice entity, repository, service, and controller exist; tenant-scoped invoice reads/voids are enforced. |
+| Frontend route/API alignment | Frontend | Partial | Customers/subscriptions and main dashboard routes exist, but E2E coverage is still pending. |
+| High-risk tenant hardening | Security | Done | Merchant-scoped service/controller paths and routing connector ownership checks added on 2026-06-09. |
+| API key secret hardening | Security | Done | Plaintext API key storage removed; legacy column cleanup added in V10 migration. |
 
 ## Medium Priority Remaining
 
@@ -51,6 +60,7 @@ High-priority backend gaps addressed:
 | Subscription webhook events | Billing | Notify renewals, failures, cancellations, and invoice status. |
 | Testcontainers | Quality | Done | RepositoryIntegrationTest (11 tests), @Disabled pending Docker. |
 | E2E tests | Quality | Not done | Merchant dashboard, admin, payment links, and checkout flows. |
+| CI Testcontainers run | Quality | Not done | Enable Docker-backed repository integration tests in CI instead of relying on skipped local runs. |
 
 ## Lower Priority / Future
 
@@ -70,18 +80,18 @@ High-priority backend gaps addressed:
 
 ## Verification Checklist
 
-Verified on 2026-06-07 with `JAVA_HOME=D:\Java\jdk-17`:
+Verified on 2026-06-09:
 
 ```bash
-mvn -DskipTests compile
-mvn -pl nexuspay-service -am -Dtest=VaultServiceTest -Dsurefire.failIfNoSpecifiedTests=false test
+mvn -pl nexuspay-service -am test
 mvn test
 ```
 
+Latest results:
+- `mvn -pl nexuspay-service -am test`: 113 service tests, 0 failures.
+- Root `mvn test`: build success across all modules; 11 Testcontainers repository integration tests skipped unless Docker is available.
+
 Still pending functional/regression coverage:
-- Refunds reach the configured provider and persist provider refund IDs.
-- Provider webhooks update local payment status and enqueue outbound events.
-- Failed webhook deliveries are retried by outbox processing.
-- Subscription renewals create/confirm renewal payment intents.
-- Reconciliation reports real local/provider status differences.
-- Merchant-scoped endpoints reject cross-merchant JWT/API-key requests.
+- Browser-level E2E tests for merchant dashboard, admin, payment links, and checkout flows.
+- Docker-backed repository integration tests in CI.
+- Broader permission annotation coverage audit across all protected endpoints.

@@ -39,9 +39,9 @@ public class RoutingEngine {
         if (domainResult == null) return null;
 
         ProviderAccount primary = domainResult.primary() != null
-                ? lookupAccount(domainResult.primary().getId()) : null;
+                ? lookupAccount(merchantId, domainResult.primary().getId()) : null;
         ProviderAccount fallback = domainResult.fallback() != null
-                ? lookupAccount(domainResult.fallback().getId()) : null;
+                ? lookupAccount(merchantId, domainResult.fallback().getId()) : null;
 
         return new RoutingResult(primary, fallback);
     }
@@ -55,13 +55,13 @@ public class RoutingEngine {
         if (domainResult == null) return null;
 
         ProviderAccount primary = domainResult.primary() != null
-                ? lookupAccount(domainResult.primary().getId()) : null;
+                ? lookupAccount(merchantId, domainResult.primary().getId()) : null;
 
         return new RoutingResult(primary, null);
     }
 
-    private ProviderAccount lookupAccount(UUID accountId) {
-        return providerAccountRepository.findById(accountId).orElse(null);
+    private ProviderAccount lookupAccount(UUID merchantId, UUID accountId) {
+        return providerAccountRepository.findByMerchantIdAndId(merchantId, accountId).orElse(null);
     }
 
     public record RoutingResult(ProviderAccount primary, ProviderAccount fallback) {}

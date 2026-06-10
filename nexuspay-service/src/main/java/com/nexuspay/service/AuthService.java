@@ -23,6 +23,8 @@ public class AuthService {
     private final OrganizationRepository organizationRepository;
     private final MerchantRepository merchantRepository;
     private final MerchantUserRepository merchantUserRepository;
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
@@ -55,6 +57,7 @@ public class AuthService {
         merchantUser.setRole(MerchantUser.Role.OWNER);
         merchantUser.setStatus(MerchantUser.MemberStatus.ACTIVE);
         merchantUserRepository.save(merchantUser);
+        grantMerchantRole(user.getId(), merchant.getId(), MerchantUser.Role.OWNER);
         
         emailService.sendWelcomeEmail(user.getEmail(), merchant.getName());
         
@@ -84,6 +87,12 @@ public class AuthService {
     
     @Transactional
     public AuthResponse refresh(String refreshToken) {
+        if (!jwtUtil.validateToken(refreshToken)
+                || !jwtUtil.isRefreshToken(refreshToken)
+                || jwtUtil.isAdminToken(refreshToken)) {
+            throw new BusinessException("Invalid refresh token", HttpStatus.UNAUTHORIZED);
+        }
+
         var tokenHash = cryptoUtil.hashSha256(refreshToken, "refresh");
         RefreshToken stored = refreshTokenRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> new BusinessException("Invalid refresh token", HttpStatus.UNAUTHORIZED));
@@ -124,6 +133,30 @@ public class AuthService {
         refreshTokenRepository.save(stored);
         
         return new AuthResponse(accessToken, refreshToken, user.getId(), user.getEmail(), merchant.getId(), merchant.getName());
+    }
+
+    private void grantMerchantRole(UUID userId, UUID merchantId, MerchantUser.Role merchantRole) {
+        String roleCode = switch (merchantRole) {
+            case OWNER -> "MERCHANT_OWNER";
+            case ADMIN -> "MERCHANT_ADMIN";
+            case DEVELOPER -> "MERCHANT_DEVELOPER";
+            case FINANCE -> "MERCHANT_FINANCE";
+            case VIEWER -> "MERCHANT_VIEWER";
+        };
+
+        var role = roleRepository.findByCode(roleCode)
+                .orElseThrow(() -> new BusinessException("Merchant role not configured", HttpStatus.INTERNAL_SERVER_ERROR));
+        if (userRoleRepository.existsByUserIdAndRoleIdAndScopeTypeAndScopeId(
+                userId, role.getId(), "MERCHANT", merchantId)) {
+            return;
+        }
+
+        UserRole grant = new UserRole();
+        grant.setUserId(userId);
+        grant.setRoleId(role.getId());
+        grant.setScopeType("MERCHANT");
+        grant.setScopeId(merchantId);
+        userRoleRepository.save(grant);
     }
     
     public record RegisterRequest(String email, String password, String organizationName, String merchantName) {}

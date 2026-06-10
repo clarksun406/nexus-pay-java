@@ -35,7 +35,7 @@ class RoutingEngineIntegrationTest {
         var account = new ProviderAccount();
         account.setId(accountId);
         account.setProvider(ProviderAccount.Provider.STRIPE);
-        when(providerAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(providerAccountRepository.findByMerchantIdAndId(merchantId, accountId)).thenReturn(Optional.of(account));
 
         var result = routingEngine.resolve(merchantId, java.math.BigInteger.valueOf(1000), "usd",
                 null, "card", PaymentIntent.Mode.TEST);
@@ -43,6 +43,27 @@ class RoutingEngineIntegrationTest {
         assertNotNull(result);
         assertNotNull(result.primary());
         assertEquals(accountId, result.primary().getId());
+        verify(providerAccountRepository).findByMerchantIdAndId(merchantId, accountId);
+        verify(providerAccountRepository, never()).findById(any());
+    }
+
+    @Test
+    void shouldNotResolveAccountOutsideMerchantScope() {
+        UUID merchantId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+
+        var aggregate = new ConnectorAggregate(accountId, merchantId, ProviderType.STRIPE, "stripe-1", "TEST");
+        when(routingDomainService.resolve(any()))
+                .thenReturn(new RoutingDomainService.RoutingResult(aggregate, null));
+        when(providerAccountRepository.findByMerchantIdAndId(merchantId, accountId)).thenReturn(Optional.empty());
+
+        var result = routingEngine.resolve(merchantId, java.math.BigInteger.valueOf(1000), "usd",
+                null, "card", PaymentIntent.Mode.TEST);
+
+        assertNotNull(result);
+        assertNull(result.primary());
+        verify(providerAccountRepository).findByMerchantIdAndId(merchantId, accountId);
+        verify(providerAccountRepository, never()).findById(any());
     }
 
     @Test

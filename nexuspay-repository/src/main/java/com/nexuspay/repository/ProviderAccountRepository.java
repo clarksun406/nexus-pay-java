@@ -11,6 +11,7 @@ import java.util.UUID;
 @Repository
 public interface ProviderAccountRepository extends JpaRepository<ProviderAccount, UUID> {
     List<ProviderAccount> findByMerchantId(UUID merchantId);
+    Optional<ProviderAccount> findByMerchantIdAndId(UUID merchantId, UUID id);
     List<ProviderAccount> findByMerchantIdAndStatus(UUID merchantId, ProviderAccount.ConnectorStatus status);
     Optional<ProviderAccount> findByMerchantIdAndIsPrimaryTrue(UUID merchantId);
     List<ProviderAccount> findByMerchantIdAndModeAndStatus(UUID merchantId, ProviderAccount.Mode mode, ProviderAccount.ConnectorStatus status);

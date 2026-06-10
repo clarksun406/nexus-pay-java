@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -27,6 +28,7 @@ public class PaymentIntentService {
     private final RoutingEngine routingEngine;
     private final ProviderDispatcher providerDispatcher;
     private final OutboxService outboxService;
+    private final TransactionTemplate transactionTemplate;
 
     @Transactional
     public PaymentIntent create(UUID merchantId, CreateRequest req) {
@@ -54,34 +56,53 @@ public class PaymentIntentService {
         return saved;
     }
 
-    @Transactional
     public PaymentIntent confirm(UUID merchantId, UUID intentId, ConfirmRequest req) {
-        PaymentIntent intent = paymentIntentRepository.findById(intentId)
-                .orElseThrow(() -> new BusinessException("Payment intent not found", HttpStatus.NOT_FOUND));
+        ConfirmPreparation prepared = transactionTemplate.execute(status -> {
+            PaymentIntent intent = paymentIntentRepository.findById(intentId)
+                    .orElseThrow(() -> new BusinessException("Payment intent not found", HttpStatus.NOT_FOUND));
 
-        if (!intent.getMerchantId().equals(merchantId)) {
-            throw new BusinessException("Payment intent not found", HttpStatus.NOT_FOUND);
+            if (!intent.getMerchantId().equals(merchantId)) {
+                throw new BusinessException("Payment intent not found", HttpStatus.NOT_FOUND);
+            }
+
+            PaymentIntentAggregate aggregate = toAggregate(intent);
+
+            RoutingEngine.RoutingResult routing = routingEngine.resolve(
+                    merchantId, intent.getAmount(), intent.getCurrency(),
+                    null, req.paymentMethodType(), intent.getMode());
+
+            if (routing == null || routing.primary() == null) {
+                throw new BusinessException("No available provider", HttpStatus.BAD_REQUEST);
+            }
+
+            ProviderAccount account = routing.primary();
+            ProviderType provider = ProviderType.valueOf(account.getProvider().name());
+
+            // Persist the provider attempt before calling the external provider.
+            paymentDomainService.confirmPayment(aggregate, req.paymentMethodType(), provider, account.getId());
+            syncToEntity(aggregate, intent);
+            PaymentIntent processing = paymentIntentRepository.save(intent);
+            return new ConfirmPreparation(processing, account);
+        });
+
+        if (prepared == null) {
+            throw new BusinessException("Payment confirmation failed", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
+        ChargeResult result;
+        try {
+            result = providerDispatcher.charge(prepared.account().getProvider(), prepared.intent(), req.paymentMethodId());
+        } catch (RuntimeException e) {
+            return transactionTemplate.execute(status ->
+                    finishFailedConfirmation(merchantId, intentId, "provider_error", e.getMessage()));
+        }
+
+        return transactionTemplate.execute(status -> finishProviderConfirmation(merchantId, intentId, result));
+    }
+
+    private PaymentIntent finishProviderConfirmation(UUID merchantId, UUID intentId, ChargeResult result) {
+        PaymentIntent intent = getPaymentIntent(merchantId, intentId);
         PaymentIntentAggregate aggregate = toAggregate(intent);
-
-        RoutingEngine.RoutingResult routing = routingEngine.resolve(
-                merchantId, intent.getAmount(), intent.getCurrency(),
-                null, req.paymentMethodType(), intent.getMode());
-
-        if (routing == null || routing.primary() == null) {
-            throw new BusinessException("No available provider", HttpStatus.BAD_REQUEST);
-        }
-
-        ProviderAccount account = routing.primary();
-        ProviderType provider = ProviderType.valueOf(account.getProvider().name());
-
-        // State validation + transition via domain service
-        paymentDomainService.confirmPayment(aggregate, req.paymentMethodType(), provider, account.getId());
-        syncToEntity(aggregate, intent);
-
-        ChargeResult result = providerDispatcher.charge(account.getProvider(), intent, req.paymentMethodId());
-
         intent.setProviderPaymentId(result.providerPaymentId());
         intent.setProviderResponse(result.providerResponse());
 
@@ -93,6 +114,20 @@ public class PaymentIntentService {
                     result.failureMessage() != null ? result.failureMessage() : "Payment failed",
                     false);
         }
+        syncToEntity(aggregate, intent);
+
+        PaymentIntent saved = paymentIntentRepository.save(intent);
+        publishDomainEvents(aggregate, saved);
+        return saved;
+    }
+
+    private PaymentIntent finishFailedConfirmation(UUID merchantId, UUID intentId, String failureCode, String failureMessage) {
+        PaymentIntent intent = getPaymentIntent(merchantId, intentId);
+        PaymentIntentAggregate aggregate = toAggregate(intent);
+        paymentDomainService.markPaymentFailed(aggregate,
+                failureCode != null ? failureCode : "unknown",
+                failureMessage != null ? failureMessage : "Payment failed",
+                false);
         syncToEntity(aggregate, intent);
 
         PaymentIntent saved = paymentIntentRepository.save(intent);
@@ -166,6 +201,8 @@ public class PaymentIntentService {
 
     public record ChargeResult(boolean success, String providerPaymentId, String providerResponse,
                               String failureCode, String failureMessage) {}
+
+    private record ConfirmPreparation(PaymentIntent intent, ProviderAccount account) {}
 
     // ---- aggregate <-> entity mapping ----
 

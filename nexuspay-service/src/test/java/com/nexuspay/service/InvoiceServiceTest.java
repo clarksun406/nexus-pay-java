@@ -71,14 +71,16 @@ class InvoiceServiceTest {
     @Test
     void shouldVoidInvoice() {
         UUID invoiceId = UUID.randomUUID();
+        UUID merchantId = UUID.randomUUID();
         Invoice invoice = new Invoice();
         invoice.setId(invoiceId);
+        invoice.setMerchantId(merchantId);
         invoice.setStatus(Invoice.InvoiceStatus.OPEN);
 
-        when(invoiceRepo.findById(invoiceId)).thenReturn(Optional.of(invoice));
+        when(invoiceRepo.findByMerchantIdAndId(merchantId, invoiceId)).thenReturn(Optional.of(invoice));
         when(invoiceRepo.save(any())).thenReturn(invoice);
 
-        Invoice result = invoiceService.voidInvoice(invoiceId);
+        Invoice result = invoiceService.voidInvoice(merchantId, invoiceId);
 
         assertEquals(Invoice.InvoiceStatus.VOID, result.getStatus());
     }
@@ -86,13 +88,15 @@ class InvoiceServiceTest {
     @Test
     void shouldNotVoidPaidInvoice() {
         UUID invoiceId = UUID.randomUUID();
+        UUID merchantId = UUID.randomUUID();
         Invoice invoice = new Invoice();
         invoice.setId(invoiceId);
+        invoice.setMerchantId(merchantId);
         invoice.setStatus(Invoice.InvoiceStatus.PAID);
 
-        when(invoiceRepo.findById(invoiceId)).thenReturn(Optional.of(invoice));
+        when(invoiceRepo.findByMerchantIdAndId(merchantId, invoiceId)).thenReturn(Optional.of(invoice));
 
-        assertThrows(BusinessException.class, () -> invoiceService.voidInvoice(invoiceId));
+        assertThrows(BusinessException.class, () -> invoiceService.voidInvoice(merchantId, invoiceId));
     }
 
     @Test

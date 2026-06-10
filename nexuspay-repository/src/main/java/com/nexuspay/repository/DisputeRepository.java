@@ -11,5 +11,6 @@ import java.util.UUID;
 @Repository
 public interface DisputeRepository extends JpaRepository<Dispute, UUID> {
     List<Dispute> findByMerchantId(UUID merchantId);
+    Optional<Dispute> findByMerchantIdAndId(UUID merchantId, UUID id);
     Optional<Dispute> findByProviderDisputeId(String providerDisputeId);
 }

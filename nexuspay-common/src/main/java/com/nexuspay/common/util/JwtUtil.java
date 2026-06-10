@@ -87,6 +87,10 @@ public class JwtUtil {
         return "access".equals(parseToken(token).get("type", String.class));
     }
 
+    public boolean isRefreshToken(String token) {
+        return "refresh".equals(parseToken(token).get("type", String.class));
+    }
+
     public String getRole(String token) {
         return parseToken(token).get("role", String.class);
     }

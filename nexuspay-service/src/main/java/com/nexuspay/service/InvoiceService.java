@@ -59,8 +59,8 @@ public class InvoiceService {
     }
 
     @Transactional
-    public Invoice voidInvoice(UUID invoiceId) {
-        Invoice invoice = invoiceRepository.findById(invoiceId)
+    public Invoice voidInvoice(UUID merchantId, UUID invoiceId) {
+        Invoice invoice = invoiceRepository.findByMerchantIdAndId(merchantId, invoiceId)
                 .orElseThrow(() -> new BusinessException("Invoice not found", HttpStatus.NOT_FOUND));
         if (invoice.getStatus() == Invoice.InvoiceStatus.PAID) {
             throw new BusinessException("Cannot void paid invoice", HttpStatus.BAD_REQUEST);
@@ -73,16 +73,16 @@ public class InvoiceService {
         return invoiceRepository.findByMerchantId(merchantId);
     }
 
-    public List<Invoice> listByCustomer(UUID customerId) {
-        return invoiceRepository.findByCustomerId(customerId);
+    public List<Invoice> listByCustomer(UUID merchantId, UUID customerId) {
+        return invoiceRepository.findByMerchantIdAndCustomerId(merchantId, customerId);
     }
 
-    public List<Invoice> listBySubscription(UUID subscriptionId) {
-        return invoiceRepository.findBySubscriptionId(subscriptionId);
+    public List<Invoice> listBySubscription(UUID merchantId, UUID subscriptionId) {
+        return invoiceRepository.findByMerchantIdAndSubscriptionId(merchantId, subscriptionId);
     }
 
-    public Invoice getInvoice(UUID invoiceId) {
-        return invoiceRepository.findById(invoiceId)
+    public Invoice getInvoice(UUID merchantId, UUID invoiceId) {
+        return invoiceRepository.findByMerchantIdAndId(merchantId, invoiceId)
                 .orElseThrow(() -> new BusinessException("Invoice not found", HttpStatus.NOT_FOUND));
     }
 

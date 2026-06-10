@@ -43,8 +43,8 @@ public class ConnectorService {
     }
 
     @Transactional
-    public ProviderAccount update(UUID accountId, UpdateConnectorRequest req) {
-        ProviderAccount account = providerAccountRepository.findById(accountId)
+    public ProviderAccount update(UUID merchantId, UUID accountId, UpdateConnectorRequest req) {
+        ProviderAccount account = providerAccountRepository.findByMerchantIdAndId(merchantId, accountId)
                 .orElseThrow(() -> new BusinessException("Connector not found", HttpStatus.NOT_FOUND));
 
         if (req.label() != null) account.setLabel(req.label());
@@ -68,14 +68,15 @@ public class ConnectorService {
         return providerAccountRepository.findByMerchantId(merchantId);
     }
 
-    public ProviderAccount getConnector(UUID accountId) {
-        return providerAccountRepository.findById(accountId)
+    public ProviderAccount getConnector(UUID merchantId, UUID accountId) {
+        return providerAccountRepository.findByMerchantIdAndId(merchantId, accountId)
                 .orElseThrow(() -> new BusinessException("Connector not found", HttpStatus.NOT_FOUND));
     }
 
     @Transactional
-    public void delete(UUID accountId) {
-        providerAccountRepository.deleteById(accountId);
+    public void delete(UUID merchantId, UUID accountId) {
+        ProviderAccount account = getConnector(merchantId, accountId);
+        providerAccountRepository.delete(account);
     }
 
     public record CreateConnectorRequest(ProviderAccount.Provider provider, ProviderAccount.Mode mode,

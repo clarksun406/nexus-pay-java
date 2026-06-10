@@ -55,6 +55,12 @@ public class AdminAuthService {
 
     @Transactional
     public AuthResponse refresh(String refreshToken) {
+        if (!jwtUtil.validateToken(refreshToken)
+                || !jwtUtil.isRefreshToken(refreshToken)
+                || !jwtUtil.isAdminToken(refreshToken)) {
+            throw new BusinessException("Invalid refresh token", HttpStatus.UNAUTHORIZED);
+        }
+
         var tokenHash = cryptoUtil.hashSha256(refreshToken, "refresh");
         RefreshToken stored = refreshTokenRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> new BusinessException("Invalid refresh token", HttpStatus.UNAUTHORIZED));
@@ -65,6 +71,14 @@ public class AdminAuthService {
 
         User user = userRepository.findById(stored.getUserId())
                 .orElseThrow(() -> new BusinessException("User not found", HttpStatus.NOT_FOUND));
+
+        List<UserRole> roles = userRoleRepository.findByUserId(user.getId());
+        boolean hasAdminAccess = roles.stream()
+                .anyMatch(r -> "SYSTEM".equals(r.getScopeType()) || "ORGANIZATION".equals(r.getScopeType()));
+
+        if (!hasAdminAccess) {
+            throw new BusinessException("No admin access", HttpStatus.FORBIDDEN);
+        }
 
         refreshTokenRepository.deleteByUserId(user.getId());
         return buildAuthResponse(user);

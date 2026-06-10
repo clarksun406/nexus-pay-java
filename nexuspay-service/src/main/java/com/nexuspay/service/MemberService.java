@@ -2,7 +2,10 @@ package com.nexuspay.service;
 
 import com.nexuspay.common.exception.BusinessException;
 import com.nexuspay.domain.entity.MerchantUser;
+import com.nexuspay.domain.entity.UserRole;
 import com.nexuspay.repository.MerchantUserRepository;
+import com.nexuspay.repository.RoleRepository;
+import com.nexuspay.repository.UserRoleRepository;
 import com.nexuspay.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,6 +21,8 @@ public class MemberService {
     
     private final MerchantUserRepository merchantUserRepository;
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
     
     public List<MerchantUser> listMembers(UUID merchantId) {
         return merchantUserRepository.findByMerchantId(merchantId);
@@ -33,7 +38,9 @@ public class MemberService {
         }
         
         member.setRole(newRole);
-        return merchantUserRepository.save(member);
+        MerchantUser saved = merchantUserRepository.save(member);
+        syncMerchantRoleGrant(userId, merchantId, newRole);
+        return saved;
     }
     
     @Transactional
@@ -46,6 +53,7 @@ public class MemberService {
         }
         
         merchantUserRepository.delete(member);
+        userRoleRepository.deleteByUserIdAndScopeTypeAndScopeId(userId, "MERCHANT", merchantId);
     }
     
     @Transactional
@@ -65,5 +73,27 @@ public class MemberService {
         member.setStatus(MerchantUser.MemberStatus.PENDING_INVITE);
         
         return merchantUserRepository.save(member);
+    }
+
+    private void syncMerchantRoleGrant(UUID userId, UUID merchantId, MerchantUser.Role role) {
+        userRoleRepository.deleteByUserIdAndScopeTypeAndScopeId(userId, "MERCHANT", merchantId);
+
+        String roleCode = switch (role) {
+            case OWNER -> "MERCHANT_OWNER";
+            case ADMIN -> "MERCHANT_ADMIN";
+            case DEVELOPER -> "MERCHANT_DEVELOPER";
+            case FINANCE -> "MERCHANT_FINANCE";
+            case VIEWER -> "MERCHANT_VIEWER";
+        };
+
+        var configuredRole = roleRepository.findByCode(roleCode)
+                .orElseThrow(() -> new BusinessException("Merchant role not configured", HttpStatus.INTERNAL_SERVER_ERROR));
+
+        UserRole grant = new UserRole();
+        grant.setUserId(userId);
+        grant.setRoleId(configuredRole.getId());
+        grant.setScopeType("MERCHANT");
+        grant.setScopeId(merchantId);
+        userRoleRepository.save(grant);
     }
 }

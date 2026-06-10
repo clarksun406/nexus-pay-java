@@ -84,8 +84,8 @@ public class RefundService {
         return refundRepository.findByMerchantId(merchantId);
     }
     
-    public Refund getRefund(UUID refundId) {
-        return refundRepository.findById(refundId)
+    public Refund getRefund(UUID merchantId, UUID refundId) {
+        return refundRepository.findByMerchantIdAndId(merchantId, refundId)
                 .orElseThrow(() -> new BusinessException("Refund not found", HttpStatus.NOT_FOUND));
     }
     

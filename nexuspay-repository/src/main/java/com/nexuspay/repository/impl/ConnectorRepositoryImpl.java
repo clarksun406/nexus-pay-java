@@ -31,6 +31,11 @@ public class ConnectorRepositoryImpl implements ConnectorRepository {
     }
 
     @Override
+    public Optional<ConnectorAggregate> findByMerchantIdAndId(UUID merchantId, UUID id) {
+        return jpaRepository.findByMerchantIdAndId(merchantId, id).map(this::toAggregate);
+    }
+
+    @Override
     public List<ConnectorAggregate> findByMerchantId(UUID merchantId) {
         return jpaRepository.findByMerchantId(merchantId).stream().map(this::toAggregate).toList();
     }

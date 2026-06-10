@@ -32,8 +32,8 @@ public class WebhookService {
     }
     
     @Transactional
-    public WebhookEndpoint update(UUID endpointId, UpdateWebhookRequest req) {
-        WebhookEndpoint endpoint = webhookEndpointRepository.findById(endpointId)
+    public WebhookEndpoint update(UUID merchantId, UUID endpointId, UpdateWebhookRequest req) {
+        WebhookEndpoint endpoint = webhookEndpointRepository.findByMerchantIdAndId(merchantId, endpointId)
                 .orElseThrow(() -> new BusinessException("Webhook endpoint not found", HttpStatus.NOT_FOUND));
         
         if (req.url() != null) endpoint.setUrl(req.url());
@@ -47,14 +47,15 @@ public class WebhookService {
         return webhookEndpointRepository.findByMerchantId(merchantId);
     }
     
-    public WebhookEndpoint getEndpoint(UUID endpointId) {
-        return webhookEndpointRepository.findById(endpointId)
+    public WebhookEndpoint getEndpoint(UUID merchantId, UUID endpointId) {
+        return webhookEndpointRepository.findByMerchantIdAndId(merchantId, endpointId)
                 .orElseThrow(() -> new BusinessException("Webhook endpoint not found", HttpStatus.NOT_FOUND));
     }
     
     @Transactional
-    public void delete(UUID endpointId) {
-        webhookEndpointRepository.deleteById(endpointId);
+    public void delete(UUID merchantId, UUID endpointId) {
+        WebhookEndpoint endpoint = getEndpoint(merchantId, endpointId);
+        webhookEndpointRepository.delete(endpoint);
     }
     
     public record CreateWebhookRequest(String url, String events) {}

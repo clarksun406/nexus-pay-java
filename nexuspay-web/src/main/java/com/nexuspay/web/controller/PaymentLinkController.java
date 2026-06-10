@@ -28,21 +28,26 @@ public class PaymentLinkController {
     
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
+            @RequestAttribute("merchantId") UUID merchantId,
             @PathVariable UUID id,
             @RequestBody UpdatePaymentLinkRequest req) {
-        return ResponseEntity.ok(paymentLinkService.update(id,
+        return ResponseEntity.ok(paymentLinkService.update(merchantId, id,
                 new PaymentLinkService.UpdateRequest(req.title(), req.description(), 
                         req.amount(), req.status())));
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deactivate(@PathVariable UUID id) {
-        return ResponseEntity.ok(paymentLinkService.deactivate(id));
+    public ResponseEntity<?> deactivate(
+            @RequestAttribute("merchantId") UUID merchantId,
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(paymentLinkService.deactivate(merchantId, id));
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<?> get(@PathVariable UUID id) {
-        return ResponseEntity.ok(paymentLinkService.get(id));
+    public ResponseEntity<?> get(
+            @RequestAttribute("merchantId") UUID merchantId,
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(paymentLinkService.get(merchantId, id));
     }
     
     @GetMapping

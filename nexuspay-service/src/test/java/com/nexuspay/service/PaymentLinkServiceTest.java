@@ -77,8 +77,10 @@ class PaymentLinkServiceTest {
     @Test
     void shouldUpdatePaymentLinkFields() {
         UUID linkId = UUID.randomUUID();
+        UUID merchantId = UUID.randomUUID();
         PaymentLink link = new PaymentLink();
         link.setId(linkId);
+        link.setMerchantId(merchantId);
         link.setTitle("Old");
         link.setDescription("Old desc");
         link.setAmount(BigInteger.valueOf(100));
@@ -91,10 +93,10 @@ class PaymentLinkServiceTest {
                 PaymentLink.LinkStatus.INACTIVE
         );
 
-        when(paymentLinkRepository.findById(linkId)).thenReturn(Optional.of(link));
+        when(paymentLinkRepository.findByMerchantIdAndId(merchantId, linkId)).thenReturn(Optional.of(link));
         when(paymentLinkRepository.save(any(PaymentLink.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        PaymentLink result = paymentLinkService.update(linkId, req);
+        PaymentLink result = paymentLinkService.update(merchantId, linkId, req);
 
         assertEquals("New", result.getTitle());
         assertEquals("New desc", result.getDescription());
@@ -105,10 +107,11 @@ class PaymentLinkServiceTest {
     @Test
     void shouldThrowNotFoundWhenUpdateMissingLink() {
         UUID linkId = UUID.randomUUID();
-        when(paymentLinkRepository.findById(linkId)).thenReturn(Optional.empty());
+        UUID merchantId = UUID.randomUUID();
+        when(paymentLinkRepository.findByMerchantIdAndId(merchantId, linkId)).thenReturn(Optional.empty());
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> paymentLinkService.update(linkId, new PaymentLinkService.UpdateRequest("x", "y", BigInteger.ONE, null)));
+                () -> paymentLinkService.update(merchantId, linkId, new PaymentLinkService.UpdateRequest("x", "y", BigInteger.ONE, null)));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
         assertEquals("Payment link not found", ex.getMessage());
@@ -117,14 +120,16 @@ class PaymentLinkServiceTest {
     @Test
     void shouldDeactivateLink() {
         UUID linkId = UUID.randomUUID();
+        UUID merchantId = UUID.randomUUID();
         PaymentLink link = new PaymentLink();
         link.setId(linkId);
+        link.setMerchantId(merchantId);
         link.setStatus(PaymentLink.LinkStatus.ACTIVE);
 
-        when(paymentLinkRepository.findById(linkId)).thenReturn(Optional.of(link));
+        when(paymentLinkRepository.findByMerchantIdAndId(merchantId, linkId)).thenReturn(Optional.of(link));
         when(paymentLinkRepository.save(any(PaymentLink.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        PaymentLink result = paymentLinkService.deactivate(linkId);
+        PaymentLink result = paymentLinkService.deactivate(merchantId, linkId);
 
         assertEquals(PaymentLink.LinkStatus.INACTIVE, result.getStatus());
     }
@@ -228,9 +233,9 @@ class PaymentLinkServiceTest {
         one.setId(linkId);
 
         when(paymentLinkRepository.findByMerchantId(merchantId)).thenReturn(List.of(one));
-        when(paymentLinkRepository.findById(linkId)).thenReturn(Optional.of(one));
+        when(paymentLinkRepository.findByMerchantIdAndId(merchantId, linkId)).thenReturn(Optional.of(one));
 
         assertEquals(1, paymentLinkService.list(merchantId).size());
-        assertEquals(linkId, paymentLinkService.get(linkId).getId());
+        assertEquals(linkId, paymentLinkService.get(merchantId, linkId).getId());
     }
 }

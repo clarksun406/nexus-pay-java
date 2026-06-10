@@ -46,13 +46,15 @@ class PayoutServiceTest {
     @Test
     void shouldGetPayoutById() {
         UUID payoutId = UUID.randomUUID();
+        UUID merchantId = UUID.randomUUID();
         Payout payout = new Payout();
         payout.setId(payoutId);
+        payout.setMerchantId(merchantId);
         payout.setAmount(BigInteger.valueOf(3000));
 
-        when(payoutRepo.findById(payoutId)).thenReturn(Optional.of(payout));
+        when(payoutRepo.findByMerchantIdAndId(merchantId, payoutId)).thenReturn(Optional.of(payout));
 
-        Payout result = payoutService.getPayout(payoutId);
+        Payout result = payoutService.getPayout(merchantId, payoutId);
         assertNotNull(result);
         assertEquals(payoutId, result.getId());
     }

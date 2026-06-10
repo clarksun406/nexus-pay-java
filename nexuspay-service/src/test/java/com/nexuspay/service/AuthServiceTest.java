@@ -1,7 +1,7 @@
 package com.nexuspay.service;
 
 import com.nexuspay.common.exception.BusinessException;
-import com.nexuspay.domain.entity.PaymentIntent;
+import com.nexuspay.domain.entity.Role;
 import com.nexuspay.repository.*;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -16,6 +16,8 @@ class AuthServiceTest {
     @Mock private OrganizationRepository organizationRepository;
     @Mock private MerchantRepository merchantRepository;
     @Mock private MerchantUserRepository merchantUserRepository;
+    @Mock private RoleRepository roleRepository;
+    @Mock private UserRoleRepository userRoleRepository;
     @Mock private RefreshTokenRepository refreshTokenRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private com.nexuspay.common.util.JwtUtil jwtUtil;
@@ -44,6 +46,13 @@ class AuthServiceTest {
         var merchant = new com.nexuspay.domain.entity.Merchant();
         merchant.setId(UUID.randomUUID());
         when(merchantRepository.save(any())).thenReturn(merchant);
+
+        var ownerRole = new Role();
+        ownerRole.setId(UUID.randomUUID());
+        ownerRole.setCode("MERCHANT_OWNER");
+        when(roleRepository.findByCode("MERCHANT_OWNER")).thenReturn(Optional.of(ownerRole));
+        when(userRoleRepository.existsByUserIdAndRoleIdAndScopeTypeAndScopeId(
+                user.getId(), ownerRole.getId(), "MERCHANT", merchant.getId())).thenReturn(false);
         
         when(jwtUtil.generateAccessToken(any(), any())).thenReturn("access");
         when(jwtUtil.generateRefreshToken(any())).thenReturn("refresh");
@@ -53,6 +62,7 @@ class AuthServiceTest {
         
         assertNotNull(result.accessToken());
         assertEquals("access", result.accessToken());
+        verify(userRoleRepository).save(any());
     }
     
     @Test
@@ -62,5 +72,18 @@ class AuthServiceTest {
         assertThrows(BusinessException.class, () -> 
             authService.register(new AuthService.RegisterRequest(
                 "test@example.com", "password", "Org", "Merchant")));
+    }
+
+    @Test
+    void shouldRejectAdminRefreshTokenOnMerchantRefresh() {
+        when(jwtUtil.validateToken("admin-refresh")).thenReturn(true);
+        when(jwtUtil.isRefreshToken("admin-refresh")).thenReturn(true);
+        when(jwtUtil.isAdminToken("admin-refresh")).thenReturn(true);
+
+        BusinessException ex = assertThrows(BusinessException.class, () ->
+                authService.refresh("admin-refresh"));
+
+        assertEquals(org.springframework.http.HttpStatus.UNAUTHORIZED, ex.getStatus());
+        verify(refreshTokenRepository, never()).findByTokenHash(anyString());
     }
 }

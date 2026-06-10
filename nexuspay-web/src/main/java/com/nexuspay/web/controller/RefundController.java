@@ -25,8 +25,10 @@ public class RefundController {
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<?> get(@PathVariable UUID id) {
-        return ResponseEntity.ok(refundService.getRefund(id));
+    public ResponseEntity<?> get(
+            @RequestAttribute("merchantId") UUID merchantId,
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(refundService.getRefund(merchantId, id));
     }
     
     @GetMapping

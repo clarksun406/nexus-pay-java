@@ -11,6 +11,7 @@ import java.util.UUID;
 @Repository
 public interface ApiKeyRepository extends JpaRepository<ApiKey, UUID> {
     List<ApiKey> findByMerchantId(UUID merchantId);
+    Optional<ApiKey> findByMerchantIdAndId(UUID merchantId, UUID id);
     Optional<ApiKey> findByKeyHash(String keyHash);
     boolean existsByKeyHash(String keyHash);
 }

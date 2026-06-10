@@ -29,8 +29,10 @@ public class ApiKeyController {
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> revoke(@PathVariable UUID id) {
-        apiKeyService.revoke(id);
+    public ResponseEntity<?> revoke(
+            @RequestAttribute("merchantId") UUID merchantId,
+            @PathVariable UUID id) {
+        apiKeyService.revoke(merchantId, id);
         return ResponseEntity.ok().build();
     }
     

@@ -20,7 +20,7 @@ public class PayoutController {
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<?> get(@PathVariable UUID id) {
-        return ResponseEntity.ok(payoutService.getPayout(id));
+    public ResponseEntity<?> get(@PathVariable UUID merchantId, @PathVariable UUID id) {
+        return ResponseEntity.ok(payoutService.getPayout(merchantId, id));
     }
 }

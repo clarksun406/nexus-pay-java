@@ -2,8 +2,11 @@ package com.nexuspay.service;
 
 import com.nexuspay.common.exception.BusinessException;
 import com.nexuspay.domain.entity.MerchantUser;
+import com.nexuspay.domain.entity.Role;
 import com.nexuspay.domain.entity.User;
 import com.nexuspay.repository.MerchantUserRepository;
+import com.nexuspay.repository.RoleRepository;
+import com.nexuspay.repository.UserRoleRepository;
 import com.nexuspay.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,12 @@ class MemberServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private RoleRepository roleRepository;
+
+    @Mock
+    private UserRoleRepository userRoleRepository;
 
     @InjectMocks
     private MemberService memberService;
@@ -61,11 +70,15 @@ class MemberServiceTest {
                 .thenReturn(Optional.of(member));
         when(merchantUserRepository.save(any(MerchantUser.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        Role adminRole = role("MERCHANT_ADMIN");
+        when(roleRepository.findByCode("MERCHANT_ADMIN")).thenReturn(Optional.of(adminRole));
 
         MerchantUser result = memberService.updateRole(merchantId, userId, MerchantUser.Role.ADMIN);
 
         assertEquals(MerchantUser.Role.ADMIN, result.getRole());
         verify(merchantUserRepository).save(member);
+        verify(userRoleRepository).deleteByUserIdAndScopeTypeAndScopeId(userId, "MERCHANT", merchantId);
+        verify(userRoleRepository).save(any());
     }
 
     @Test
@@ -116,6 +129,7 @@ class MemberServiceTest {
         memberService.removeMember(merchantId, userId);
 
         verify(merchantUserRepository).delete(member);
+        verify(userRoleRepository).deleteByUserIdAndScopeTypeAndScopeId(userId, "MERCHANT", merchantId);
     }
 
     @Test
@@ -191,5 +205,12 @@ class MemberServiceTest {
         assertEquals(MerchantUser.Role.DEVELOPER, result.getRole());
         assertEquals(invitedBy, result.getInvitedBy());
         assertEquals(MerchantUser.MemberStatus.PENDING_INVITE, result.getStatus());
+    }
+
+    private Role role(String code) {
+        Role role = new Role();
+        role.setId(UUID.randomUUID());
+        role.setCode(code);
+        return role;
     }
 }

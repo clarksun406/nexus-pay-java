@@ -24,14 +24,15 @@ public class RoutingDomainService {
         
         for (RoutingRuleAggregate rule : rules) {
             if (rule.matches(criteria)) {
-                ConnectorAggregate primary = connectorRepository.findById(rule.getTargetAccountId())
+                ConnectorAggregate primary = connectorRepository.findByMerchantIdAndId(
+                                criteria.merchantId(), rule.getTargetAccountId())
                         .filter(c -> c.isAvailable() && matchesMode(c, criteria.mode()))
                         .orElse(null);
                 
                 if (primary == null) continue;
                 
                 ConnectorAggregate fallback = rule.getFallbackAccountId() != null
-                        ? connectorRepository.findById(rule.getFallbackAccountId())
+                        ? connectorRepository.findByMerchantIdAndId(criteria.merchantId(), rule.getFallbackAccountId())
                                 .filter(c -> c.isAvailable() && matchesMode(c, criteria.mode()))
                                 .orElse(null)
                         : null;

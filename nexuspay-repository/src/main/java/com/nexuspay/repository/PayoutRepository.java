@@ -11,5 +11,6 @@ import java.util.UUID;
 @Repository
 public interface PayoutRepository extends JpaRepository<Payout, UUID> {
     List<Payout> findByMerchantId(UUID merchantId);
+    Optional<Payout> findByMerchantIdAndId(UUID merchantId, UUID id);
     Optional<Payout> findByIdempotencyKey(String idempotencyKey);
 }
